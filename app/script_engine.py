@@ -11,7 +11,7 @@ import json
 
 from anthropic import Anthropic
 
-MODEL = "claude-opus-4-8"
+MODEL = "claude-haiku-4-5-20251001"
 
 VIRAL_CRITERIA = [
     "clarity",
@@ -133,7 +133,7 @@ def score_concept(profile: dict, brief: dict) -> dict:
     response = client.messages.create(
         model=MODEL,
         max_tokens=4000,
-        output_config={"effort": "low", "format": {"type": "json_schema", "schema": SCORE_SCHEMA}},
+        output_config={"format": {"type": "json_schema", "schema": SCORE_SCHEMA}},
         system=SCORE_SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_content}],
     )
@@ -251,8 +251,7 @@ def generate_script(profile: dict, brief: dict) -> dict:
     response = client.messages.create(
         model=MODEL,
         max_tokens=10000,
-        thinking={"type": "adaptive"},
-        output_config={"effort": "high", "format": {"type": "json_schema", "schema": SCRIPT_SCHEMA}},
+        output_config={"format": {"type": "json_schema", "schema": SCRIPT_SCHEMA}},
         system=SCRIPT_SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_content}],
     )
@@ -283,7 +282,7 @@ def revise_moment(
     response = client.messages.create(
         model=MODEL,
         max_tokens=2000,
-        output_config={"effort": "medium", "format": {"type": "json_schema", "schema": _moment_schema()}},
+        output_config={"format": {"type": "json_schema", "schema": _moment_schema()}},
         system=REVISE_SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_content}],
     )

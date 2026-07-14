@@ -8,7 +8,7 @@ from anthropic import Anthropic
 
 from app.schema import CATEGORY_SCHEMA
 
-MODEL = "claude-opus-4-8"
+MODEL = "claude-haiku-4-5-20251001"
 
 SYSTEM_PROMPT = """You are the intake engine for Pulse. Companies paste or upload whatever \
 material they have about their business — a pitch deck excerpt, a messy set of notes, a \
@@ -57,7 +57,7 @@ def categorize(raw_text: str, existing_profile: Optional[dict] = None) -> dict:
     response = client.messages.create(
         model=MODEL,
         max_tokens=8000,
-        output_config={"effort": "medium", "format": {"type": "json_schema", "schema": CATEGORY_SCHEMA}},
+        output_config={"format": {"type": "json_schema", "schema": CATEGORY_SCHEMA}},
         system=system,
         messages=[{"role": "user", "content": user_content}],
     )

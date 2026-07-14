@@ -7,6 +7,7 @@ from fastapi import Body, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from app import auth
 from app.categorize import CategorizationRefused, categorize
 from app.extract_text import UnsupportedFileType, extract_text
 from app.schema import CATEGORY_LABELS
@@ -45,12 +46,22 @@ def _validate_email(email: str) -> str:
     return email
 
 
-@app.get("/api/profile")
-def get_profile_endpoint(email: str):
-    email = _validate_email(email)
+@app.post("/api/auth/login")
+def login_endpoint(payload: dict = Body(...)):
+    email = _validate_email(payload.get("email", ""))
+    password = payload.get("password", "")
+    if not password:
+        raise HTTPException(status_code=400, detail="Escribe una contraseña.")
+
+    stored_hash = storage.get_credentials(email)
+
+    if stored_hash is None:
+        # First time we see this email — create the account with this password.
+        storage.create_credentials(email, auth.hash_password(password))
+    elif not auth.verify_password(password, stored_hash):
+        raise HTTPException(status_code=401, detail="Contraseña incorrecta.")
+
     profile = storage.get_profile(email)
-    if profile is None:
-        raise HTTPException(status_code=404, detail="No hay un perfil guardado con ese correo.")
     return {"profile": profile, "category_labels": CATEGORY_LABELS}
 
 
