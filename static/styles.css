@@ -1,10 +1,10 @@
 :root {
-  --bg: #eef2f6;
-  --ink: #12202b;
-  --muted: #5b7184;
-  --accent: #1f7a68;
+  --bg: #f4f1ea;
+  --ink: #1c1a17;
+  --muted: #6b6558;
+  --accent: #c1622d;
   --card: #ffffff;
-  --border: #d7e0e8;
+  --border: #e4ddd0;
 }
 
 * {
@@ -59,7 +59,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 8px;
   resize: vertical;
-  background: #f7fafc;
+  background: #fffdf9;
 }
 
 input[type="file"] {
@@ -75,7 +75,7 @@ select {
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #f7fafc;
+  background: #fffdf9;
   color: var(--ink);
 }
 
@@ -307,18 +307,18 @@ button:hover:not(:disabled) {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0f1a24;
-    --ink: #eef2f6;
-    --muted: #8ba0b3;
-    --accent: #3fa78e;
-    --card: #16232f;
-    --border: #263542;
+    --bg: #17140f;
+    --ink: #f1ede4;
+    --muted: #a39a86;
+    --accent: #e08a52;
+    --card: #211d16;
+    --border: #382f22;
   }
 
   textarea,
   input[type="text"],
   select {
-    background: #101b25;
+    background: #1b1712;
     color: var(--ink);
   }
 }
