@@ -34,6 +34,23 @@ const GOALS = [
 
 const PLATFORMS = ["TikTok", "Instagram", "LinkedIn", "Other"];
 
+const CRITERIA_LABELS = {
+  clarity: "Claridad",
+  curiosity: "Curiosidad",
+  emotion: "Emoción",
+  shareability: "Shareability",
+  save_worthiness: "Save-worthiness",
+  conversation_potential: "Potencial de conversación",
+  simplicity: "Simplicidad (una sola idea)",
+  novelty: "Novedad",
+  authority: "Autoridad",
+  hook_strength: "Fuerza del hook",
+};
+
+const VIRAL_ENGINE_DISCLAIMER =
+  "Pulse maximiza la probabilidad de alcance siguiendo principios de contenido de alto " +
+  "desempeño — no garantiza resultados virales.";
+
 const MOMENT_LABELS = [
   ["hook", "Hook"],
   ["beat_1", "Beat 1"],
@@ -50,6 +67,7 @@ let currentEmail = null;
 let currentBrief = null;
 let currentScript = null;
 let momentUIMode = {};
+let currentScoreData = null;
 
 function setStatus(message, kind) {
   statusEl.textContent = message || "";
@@ -331,7 +349,7 @@ function renderFinalSummary(brief) {
     </div>
     <div class="actions-row">
       <button type="button" id="back-to-brief-btn" class="secondary">← Editar brief</button>
-      <button type="button" id="generate-script-btn">Generar guión →</button>
+      <button type="button" id="generate-script-btn">Evaluar idea →</button>
     </div>
     <div id="generate-status" class="status"></div>
   `;
@@ -360,7 +378,9 @@ async function generateScript() {
   const btn = document.getElementById("generate-script-btn");
   const genStatus = document.getElementById("generate-status");
   btn.disabled = true;
-  genStatus.textContent = "Escribiendo el guión (puede tardar hasta 20-30 segundos)...";
+  genStatus.textContent =
+    "Evaluando la idea contra el Viral Engine y, si pasa, escribiendo el guión " +
+    "(puede tardar hasta 30-40 segundos)...";
   genStatus.className = "status loading";
 
   try {
@@ -378,9 +398,16 @@ async function generateScript() {
       return;
     }
 
+    currentScoreData = { scores: data.scores, total: data.total, threshold: data.threshold };
+
+    if (!data.produced) {
+      renderScoreGate(data);
+      return;
+    }
+
     currentScript = data.script;
     momentUIMode = {};
-    renderScriptPanel();
+    renderScriptView();
   } catch (err) {
     genStatus.textContent = "No se pudo conectar con el servidor.";
     genStatus.className = "status error";
@@ -437,9 +464,117 @@ function buildMomentBlock(key, label) {
     </div>`;
 }
 
-function renderScriptPanel() {
-  resultsEl.innerHTML = "";
+function renderScoreGrid(scores, total, threshold) {
+  const panel = document.createElement("div");
+  panel.className = "panel";
 
+  const passed = total >= threshold;
+  const rows = Object.entries(CRITERIA_LABELS)
+    .map(([key, label]) => {
+      const weak = scores[key].score < 7 ? " weak-score" : "";
+      return `
+        <div class="field">
+          <div class="field-label">${escapeHtml(label)} — <span class="${weak}">${scores[key].score}/10</span></div>
+          <div class="field-value">${escapeHtml(scores[key].note)}</div>
+        </div>`;
+    })
+    .join("");
+
+  panel.innerHTML = `
+    <h2>Viral Engine</h2>
+    <p class="status ${passed ? "" : "error"}" style="font-size: 1.1rem; font-weight: 700;">
+      Score: ${total}/100 (mínimo para generar guión: ${threshold})
+    </p>
+    <p class="intake-description">${VIRAL_ENGINE_DISCLAIMER}</p>
+    ${rows}
+  `;
+  return panel;
+}
+
+function renderScoreGate(data) {
+  const btn = document.getElementById("generate-script-btn");
+  if (btn) btn.disabled = false;
+
+  resultsEl.innerHTML = "";
+  resultsEl.appendChild(renderScoreGrid(data.scores, data.total, data.threshold));
+
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = `
+    <p class="status error">
+      Esta idea no alcanzó el score mínimo para generar el guión todavía.
+    </p>
+    <div class="field">
+      <div class="field-label">Ángulo más fuerte sugerido para la misma idea</div>
+      <div class="field-value">${escapeHtml(data.scores.stronger_angle)}</div>
+    </div>
+    <div class="actions-row">
+      <button type="button" id="back-to-summary-btn" class="secondary">← Volver al resumen</button>
+      <button type="button" id="use-suggested-angle-btn">Usar este ángulo y reintentar</button>
+    </div>
+  `;
+  resultsEl.appendChild(panel);
+
+  document
+    .getElementById("back-to-summary-btn")
+    .addEventListener("click", () => renderFinalSummary(currentBrief));
+  document.getElementById("use-suggested-angle-btn").addEventListener("click", () => {
+    currentBrief.topic = data.scores.stronger_angle;
+    renderFinalSummary(currentBrief);
+    generateScript();
+  });
+}
+
+function buildMomentBlock(key, label) {
+  const m = currentScript[key];
+  const mode = momentUIMode[key] || "view";
+
+  if (mode !== "edit" && !m.time && !m.visual && !m.script) {
+    return "";
+  }
+
+  if (mode === "edit") {
+    return `
+      <div class="field moment-block" data-moment="${key}">
+        <div class="field-label">${label}</div>
+        <input type="text" class="moment-time-input" placeholder="Tiempo, ej. 0:00-0:03" value="${escapeHtml(m.time)}" />
+        <textarea class="moment-visual-input" rows="2" placeholder="Dirección visual">${escapeHtml(m.visual)}</textarea>
+        <textarea class="moment-script-input" rows="2" placeholder="Texto a decir en cámara">${escapeHtml(m.script)}</textarea>
+        <div class="actions-row">
+          <button type="button" class="moment-save-btn">Guardar</button>
+          <button type="button" class="moment-cancel-btn secondary">Cancelar</button>
+        </div>
+      </div>`;
+  }
+
+  if (mode === "ai-fix") {
+    return `
+      <div class="field moment-block" data-moment="${key}">
+        <div class="field-label">${label} (${escapeHtml(m.time)})</div>
+        <div class="field-value"><em>${escapeHtml(m.visual)}</em></div>
+        <div class="field-value">"${escapeHtml(m.script)}"</div>
+        <textarea class="moment-instruction-input" rows="2" placeholder='Ej: "Hazlo más gracioso", "empieza con una pregunta", "que sea más corto"...'></textarea>
+        <div class="actions-row">
+          <button type="button" class="moment-ai-submit-btn">Pedir ajuste a la IA</button>
+          <button type="button" class="moment-cancel-btn secondary">Cancelar</button>
+        </div>
+        <div class="status moment-ai-status"></div>
+      </div>`;
+  }
+
+  return `
+    <div class="field moment-block" data-moment="${key}">
+      <div class="field-label">${label} (${escapeHtml(m.time)})</div>
+      <div class="field-value"><em>${escapeHtml(m.visual)}</em></div>
+      <div class="field-value">"${escapeHtml(m.script)}"</div>
+      <div class="actions-row">
+        <button type="button" class="moment-edit-btn secondary">Editar manualmente</button>
+        <button type="button" class="moment-ai-btn secondary">Pedir ajuste a la IA</button>
+      </div>
+    </div>`;
+}
+
+function buildScriptPanelElement() {
   const panel = document.createElement("div");
   panel.className = "panel";
   const moments = MOMENT_LABELS.map(([key, label]) => buildMomentBlock(key, label)).join("");
@@ -460,24 +595,23 @@ function renderScriptPanel() {
       <button type="button" id="regenerate-btn">Generar otra versión</button>
     </div>
   `;
-  resultsEl.appendChild(panel);
 
   panel.querySelectorAll(".moment-edit-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       momentUIMode[btn.closest(".moment-block").dataset.moment] = "edit";
-      renderScriptPanel();
+      renderScriptView();
     });
   });
   panel.querySelectorAll(".moment-ai-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       momentUIMode[btn.closest(".moment-block").dataset.moment] = "ai-fix";
-      renderScriptPanel();
+      renderScriptView();
     });
   });
   panel.querySelectorAll(".moment-cancel-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       momentUIMode[btn.closest(".moment-block").dataset.moment] = "view";
-      renderScriptPanel();
+      renderScriptView();
     });
   });
   panel.querySelectorAll(".moment-save-btn").forEach((btn) => {
@@ -490,17 +624,29 @@ function renderScriptPanel() {
         script: block.querySelector(".moment-script-input").value.trim(),
       };
       momentUIMode[key] = "view";
-      renderScriptPanel();
+      renderScriptView();
     });
   });
   panel.querySelectorAll(".moment-ai-submit-btn").forEach((btn) => {
     btn.addEventListener("click", () => requestMomentFix(btn.closest(".moment-block").dataset.moment));
   });
 
-  document
-    .getElementById("back-to-summary-btn")
+  panel
+    .querySelector("#back-to-summary-btn")
     .addEventListener("click", () => renderFinalSummary(currentBrief));
-  document.getElementById("regenerate-btn").addEventListener("click", generateScript);
+  panel.querySelector("#regenerate-btn").addEventListener("click", generateScript);
+
+  return panel;
+}
+
+function renderScriptView() {
+  resultsEl.innerHTML = "";
+  if (currentScoreData) {
+    resultsEl.appendChild(
+      renderScoreGrid(currentScoreData.scores, currentScoreData.total, currentScoreData.threshold)
+    );
+  }
+  resultsEl.appendChild(buildScriptPanelElement());
 }
 
 async function requestMomentFix(key) {
@@ -539,7 +685,7 @@ async function requestMomentFix(key) {
 
     currentScript[key] = data.moment;
     momentUIMode[key] = "view";
-    renderScriptPanel();
+    renderScriptView();
   } catch (err) {
     aiStatus.textContent = "No se pudo conectar con el servidor.";
     aiStatus.className = "status error moment-ai-status";

@@ -1,12 +1,107 @@
-"""Reel script generation from a company's brand profile and a
-per-piece content brief — the best possible script for the stated idea
-and goal, no gate in front of it."""
+"""Viral Engine scoring + reel script generation.
+
+Score the reel idea against 10 criteria before writing anything — a strict,
+repeatable gate, not a creative step. Only draft the actual script once the
+concept clears 70/100; below that, suggest a sharper angle for the same
+idea instead of a script.
+"""
 
 import json
 
 from anthropic import Anthropic
 
 MODEL = "claude-opus-4-8"
+
+VIRAL_CRITERIA = [
+    "clarity",
+    "curiosity",
+    "emotion",
+    "shareability",
+    "save_worthiness",
+    "conversation_potential",
+    "simplicity",
+    "novelty",
+    "authority",
+    "hook_strength",
+]
+
+SCORE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        **{
+            crit: {
+                "type": "object",
+                "properties": {
+                    "score": {"type": "integer"},
+                    "note": {"type": "string"},
+                },
+                "required": ["score", "note"],
+                "additionalProperties": False,
+            }
+            for crit in VIRAL_CRITERIA
+        },
+        "stronger_angle": {"type": "string"},
+    },
+    "required": [*VIRAL_CRITERIA, "stronger_angle"],
+    "additionalProperties": False,
+}
+
+SCORE_SYSTEM_PROMPT = """You are the Viral Engine for Pulse. Before any script gets \
+written, you evaluate the company's reel idea (their brand profile + the specific topic, \
+goal, and platform in their content brief) against 10 criteria, each scored 0-10: clarity, \
+curiosity, emotion, shareability, save-worthiness (save_worthiness), conversation \
+potential, simplicity (one idea per video), novelty, authority, and hook strength.
+
+Score the idea itself — this specific topic for this specific goal and platform — not the \
+brand in general. Be a strict, consistent grader: the same idea should reliably score close \
+to the same way every time, and a mediocre or generic idea should land in the 40s-60s, not \
+get inflated into the 70s+ range just to be encouraging. Reserve 80+ scores for ideas that \
+are genuinely sharp.
+
+For each criterion:
+- If the score is 7 or higher, the note is a one-line reason it works.
+- If the score is below 7, the note is one concrete, actionable suggestion for how this \
+specific idea could improve on that criterion — not generic advice.
+
+Also fill in "stronger_angle": regardless of the score, suggest one concrete way to \
+sharpen this SAME idea into a stronger angle — do not propose a different topic. Refine \
+the specific hook, framing, or detail of what the company already gave you (e.g. make it \
+more personal, more specific, more contrarian, add a concrete stake or number). One to two \
+sentences."""
+
+
+def total_score(scores: dict) -> int:
+    return sum(scores[crit]["score"] for crit in VIRAL_CRITERIA)
+
+
+def score_concept(profile: dict, brief: dict) -> dict:
+    client = Anthropic()
+
+    user_content = (
+        f"Brand profile (JSON):\n{json.dumps(profile, ensure_ascii=False)}\n\n"
+        f"Content brief for this specific piece:\n{_brief_to_text(brief)}\n\n"
+        "Score this idea against the 10 Viral Engine criteria before any script is written."
+    )
+
+    response = client.messages.create(
+        model=MODEL,
+        max_tokens=4000,
+        output_config={"effort": "low", "format": {"type": "json_schema", "schema": SCORE_SCHEMA}},
+        system=SCORE_SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": user_content}],
+    )
+
+    if response.stop_reason == "refusal":
+        raise ScriptGenerationRefused("El modelo no pudo evaluar esta idea.")
+
+    text_block = next(b for b in response.content if b.type == "text")
+    scores = json.loads(text_block.text)
+
+    for crit in VIRAL_CRITERIA:
+        scores[crit]["score"] = max(0, min(10, int(scores[crit]["score"])))
+
+    return scores
+
 
 MOMENT_FIELDS = ["time", "visual", "script"]
 MOMENT_KEYS = ["hook", "beat_1", "beat_2", "beat_3", "beat_4", "cta"]

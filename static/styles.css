@@ -120,6 +120,11 @@ button:hover:not(:disabled) {
   color: var(--muted);
 }
 
+.weak-score {
+  color: #b3261e;
+  font-weight: 700;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
