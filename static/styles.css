@@ -224,6 +224,87 @@ button:hover:not(:disabled) {
   border-color: var(--accent);
 }
 
+#teleprompter-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #000;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.tp-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #111;
+  border-bottom: 1px solid #333;
+}
+
+.tp-controls-right {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tp-controls button {
+  margin: 0;
+}
+
+#teleprompter-overlay button.secondary {
+  background: transparent;
+  color: #fff;
+  border: 1px solid #444;
+}
+
+#tp-play-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#tp-speed {
+  width: 90px;
+}
+
+@media (max-width: 480px) {
+  .tp-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tp-controls-right {
+    justify-content: space-between;
+  }
+}
+
+.tp-content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 48px 24px 0;
+}
+
+.tp-line {
+  margin: 0 0 56px;
+  text-align: center;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.tp-spacer {
+  height: 60vh;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #17140f;
