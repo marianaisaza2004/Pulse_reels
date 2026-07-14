@@ -6,6 +6,7 @@ const statusEl = document.getElementById("status");
 const resultsEl = document.getElementById("results");
 
 const emailInput = document.getElementById("email-input");
+const passwordInput = document.getElementById("password-input");
 const emailContinueBtn = document.getElementById("email-continue-btn");
 const changeEmailBtn = document.getElementById("change-email-btn");
 const emailStatusEl = document.getElementById("email-status");
@@ -870,9 +871,14 @@ form.addEventListener("submit", async (e) => {
 
 emailContinueBtn.addEventListener("click", async () => {
   const email = emailInput.value.trim();
+  const password = passwordInput.value;
 
   if (!isValidEmail(email)) {
     setEmailStatus("Escribe un correo válido.", "error");
+    return;
+  }
+  if (!password) {
+    setEmailStatus("Escribe una contraseña.", "error");
     return;
   }
 
@@ -886,34 +892,41 @@ emailContinueBtn.addEventListener("click", async () => {
   intakeSection.style.display = "none";
   setStatus("", "");
 
-  currentEmail = email;
   emailContinueBtn.disabled = true;
   emailInput.disabled = true;
-  setEmailStatus("Buscando perfil guardado...", "loading");
+  passwordInput.disabled = true;
+  setEmailStatus("Verificando...", "loading");
 
   try {
-    const res = await fetch(`/api/profile?email=${encodeURIComponent(email)}`);
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
 
-    if (res.ok) {
-      const data = await res.json();
+    if (!res.ok) {
+      setEmailStatus(data.detail || "Ocurrió un error.", "error");
+      emailContinueBtn.disabled = false;
+      emailInput.disabled = false;
+      passwordInput.disabled = false;
+      return;
+    }
+
+    currentEmail = email;
+
+    if (data.profile) {
       currentProfile = data.profile;
       currentLabels = data.category_labels;
       editingCategories = false;
       setEmailStatus(`Perfil encontrado para ${email}.`, "");
       intakeSection.style.display = "none";
       renderCategoryView();
-    } else if (res.status === 404) {
+    } else {
       setEmailStatus(`No hay perfil guardado para ${email} todavía — vamos a crear uno.`, "");
       intakeHeading.textContent = `Nuevo perfil para ${email}`;
       resultsEl.innerHTML = "";
       intakeSection.style.display = "block";
-    } else {
-      const data = await res.json();
-      setEmailStatus(data.detail || "Ocurrió un error.", "error");
-      emailContinueBtn.disabled = false;
-      emailInput.disabled = false;
-      currentEmail = null;
-      return;
     }
 
     changeEmailBtn.style.display = "inline-block";
@@ -921,6 +934,7 @@ emailContinueBtn.addEventListener("click", async () => {
     setEmailStatus("No se pudo conectar con el servidor.", "error");
     emailContinueBtn.disabled = false;
     emailInput.disabled = false;
+    passwordInput.disabled = false;
     currentEmail = null;
   }
 });
@@ -933,6 +947,8 @@ changeEmailBtn.addEventListener("click", () => {
 
   emailInput.value = "";
   emailInput.disabled = false;
+  passwordInput.value = "";
+  passwordInput.disabled = false;
   emailContinueBtn.disabled = false;
   changeEmailBtn.style.display = "none";
   setEmailStatus("", "");

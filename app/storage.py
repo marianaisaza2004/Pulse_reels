@@ -25,6 +25,15 @@ def _connect() -> sqlite3.Connection:
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS credentials (
+            email TEXT PRIMARY KEY,
+            password_hash TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+        """
+    )
     return conn
 
 
@@ -58,6 +67,35 @@ def save_profile(email: str, profile: dict) -> None:
             (
                 normalize_email(email),
                 json.dumps(profile),
+                datetime.now(timezone.utc).isoformat(),
+            ),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_credentials(email: str) -> Optional[str]:
+    """Returns the stored password hash for this email, or None if no account exists."""
+    conn = _connect()
+    try:
+        row = conn.execute(
+            "SELECT password_hash FROM credentials WHERE email = ?",
+            (normalize_email(email),),
+        ).fetchone()
+        return row[0] if row else None
+    finally:
+        conn.close()
+
+
+def create_credentials(email: str, password_hash: str) -> None:
+    conn = _connect()
+    try:
+        conn.execute(
+            "INSERT INTO credentials (email, password_hash, created_at) VALUES (?, ?, ?)",
+            (
+                normalize_email(email),
+                password_hash,
                 datetime.now(timezone.utc).isoformat(),
             ),
         )
