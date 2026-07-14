@@ -11,12 +11,12 @@ from app.categorize import CategorizationRefused, categorize
 from app.extract_text import UnsupportedFileType, extract_text
 from app.schema import CATEGORY_LABELS
 from app.script_engine import (
+    MIN_SCORE_TO_PRODUCE,
     MOMENT_KEYS,
     ScriptGenerationRefused,
     generate_script,
+    refine_idea,
     revise_moment,
-    score_concept,
-    total_score,
 )
 from app import storage
 
@@ -24,8 +24,6 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = BASE_DIR / "static"
-
-SCORE_THRESHOLD = 70
 
 app = FastAPI(title="Pulse — Brand Intake")
 
@@ -135,23 +133,27 @@ def script_endpoint(payload: dict = Body(...)):
         raise HTTPException(status_code=400, detail="Falta el perfil o el brief de contenido.")
 
     try:
-        scores = score_concept(profile, brief)
+        refinement = refine_idea(profile, brief)
     except ScriptGenerationRefused as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-    score = total_score(scores)
-    produced = score >= SCORE_THRESHOLD
+    scores = refinement["scores"]
+    total = refinement["total"]
+    final_brief = refinement["brief"]
+    produced = total >= MIN_SCORE_TO_PRODUCE
 
     result = {
         "scores": scores,
-        "total": score,
-        "threshold": SCORE_THRESHOLD,
+        "total": total,
+        "threshold": MIN_SCORE_TO_PRODUCE,
         "produced": produced,
+        "final_topic": final_brief["topic"],
+        "rounds_tried": len(refinement["attempts"]),
     }
 
     if produced:
         try:
-            result["script"] = generate_script(profile, brief)
+            result["script"] = generate_script(profile, final_brief)
         except ScriptGenerationRefused as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
