@@ -17,8 +17,7 @@ estandarizado:
 6. Brand Assets
 7. Social Performance
 8. Competitor Context
-9. Campaign Context
-10. Constraints
+9. Constraints
 
 El modelo solo extrae lo que está explícito o directamente implícito en el
 input — nunca inventa datos. Los campos sin información quedan vacíos en vez

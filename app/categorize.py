@@ -26,9 +26,7 @@ gaps with generic placeholder text like "not specified" — just leave it empty.
 - Keep values in the same language as the input (Spanish input -> Spanish output, English \
 input -> English output).
 - Be concise: each field should read like a usable brief entry, not a copy-paste of the \
-entire source paragraph.
-- "campaign_context" has no sub-fields — put anything specific to a particular campaign \
-or project (as opposed to the business as a whole) there as free text, or "" if none."""
+entire source paragraph."""
 
 
 class CategorizationRefused(RuntimeError):

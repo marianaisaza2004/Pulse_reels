@@ -158,7 +158,6 @@ CATEGORY_SCHEMA = {
             ],
             "additionalProperties": False,
         },
-        "campaign_context": {"type": "string"},
         "constraints": {
             "type": "object",
             "properties": {
@@ -189,7 +188,6 @@ CATEGORY_SCHEMA = {
         "brand_assets",
         "social_performance",
         "competitor_context",
-        "campaign_context",
         "constraints",
     ],
     "additionalProperties": False,
@@ -205,6 +203,5 @@ CATEGORY_LABELS = [
     ("brand_assets", "6. Brand Assets"),
     ("social_performance", "7. Social Performance"),
     ("competitor_context", "8. Competitor Context"),
-    ("campaign_context", "9. Campaign Context"),
-    ("constraints", "10. Constraints"),
+    ("constraints", "9. Constraints"),
 ]
