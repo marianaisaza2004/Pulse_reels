@@ -486,6 +486,16 @@ emailContinueBtn.addEventListener("click", async () => {
     return;
   }
 
+  // Always start from a clean slate for this email — never carry over
+  // whatever was in memory from a previous email in this same session.
+  currentProfile = null;
+  currentLabels = null;
+  currentBrief = null;
+  editingCategories = false;
+  resultsEl.innerHTML = "";
+  intakeSection.style.display = "none";
+  setStatus("", "");
+
   currentEmail = email;
   emailContinueBtn.disabled = true;
   emailInput.disabled = true;

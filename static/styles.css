@@ -43,6 +43,13 @@ header p {
   margin-bottom: 24px;
 }
 
+.intake-description {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+
 textarea {
   width: 100%;
   min-height: 160px;
