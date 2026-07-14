@@ -1,10 +1,10 @@
 :root {
-  --bg: #f4f1ea;
-  --ink: #1c1a17;
-  --muted: #6b6558;
-  --accent: #c1622d;
+  --bg: #f5f0fa;
+  --ink: #241b2f;
+  --muted: #7a6b8a;
+  --accent: #7c3aed;
   --card: #ffffff;
-  --border: #e4ddd0;
+  --border: #e2d6ee;
 }
 
 * {
@@ -59,7 +59,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 8px;
   resize: vertical;
-  background: #fffdf9;
+  background: #faf7fd;
 }
 
 input[type="file"] {
@@ -75,7 +75,7 @@ select {
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fffdf9;
+  background: #faf7fd;
   color: var(--ink);
 }
 
@@ -307,18 +307,18 @@ button:hover:not(:disabled) {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #17140f;
-    --ink: #f1ede4;
-    --muted: #a39a86;
-    --accent: #e08a52;
-    --card: #211d16;
-    --border: #382f22;
+    --bg: #1a1225;
+    --ink: #f0e9f7;
+    --muted: #a793bb;
+    --accent: #a78bfa;
+    --card: #241a30;
+    --border: #3a2a4a;
   }
 
   textarea,
   input[type="text"],
   select {
-    background: #1b1712;
+    background: #1f1729;
     color: var(--ink);
   }
 }
