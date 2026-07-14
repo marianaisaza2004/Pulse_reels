@@ -60,8 +60,21 @@ input[type="file"] {
   font-size: 0.9rem;
 }
 
+input[type="text"],
+select {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fffdf9;
+  color: var(--ink);
+}
+
 button {
   margin-top: 16px;
+  margin-right: 8px;
   background: var(--accent);
   color: white;
   border: none;
@@ -70,6 +83,12 @@ button {
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--border);
 }
 
 button:disabled {
@@ -132,6 +151,44 @@ button:hover:not(:disabled) {
   padding-left: 18px;
 }
 
+.field-edit {
+  width: 100%;
+  min-height: 44px;
+  font-size: 0.9rem;
+  padding: 8px 10px;
+}
+
+.actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+}
+
+.pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.pill {
+  margin: 0;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.pill.selected {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #17140f;
@@ -142,7 +199,9 @@ button:hover:not(:disabled) {
     --border: #382f22;
   }
 
-  textarea {
+  textarea,
+  input[type="text"],
+  select {
     background: #1b1712;
     color: var(--ink);
   }

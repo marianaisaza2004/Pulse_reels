@@ -5,19 +5,54 @@ const submitBtn = document.getElementById("submit-btn");
 const statusEl = document.getElementById("status");
 const resultsEl = document.getElementById("results");
 
+const GOALS = [
+  ["brand_awareness", "Increase Brand Awareness", "Make more people recognize your brand."],
+  ["drive_sales", "Drive Sales", "Encourage people to purchase a product or service."],
+  ["generate_leads", "Generate Leads", "Capture potential customers."],
+  ["increase_engagement", "Increase Engagement", "Get more likes, comments, shares, and saves."],
+  ["educate_audience", "Educate Your Audience", "Teach something valuable related to your industry or product."],
+  ["build_trust", "Build Trust & Credibility", "Position your brand as reliable and knowledgeable."],
+  ["grow_community", "Grow Your Community", "Attract followers and strengthen relationships with your audience."],
+  ["promote_product", "Promote a Product or Service", "Highlight features, benefits, or launches."],
+  ["announce_promotion", "Announce a Promotion or Offer", "Promote discounts, limited-time offers, or special campaigns."],
+  ["drive_traffic", "Drive Website Traffic", "Encourage people to visit your website or landing page."],
+  ["collect_ugc", "Collect User-Generated Content (UGC)", "Encourage customers to create or share content."],
+  ["launch_product", "Launch a New Product", "Introduce something new to the market."],
+  ["retain_customers", "Retain Existing Customers", "Keep current customers engaged and loyal."],
+  ["brand_story", "Share Your Brand Story", "Communicate your mission, values, or company journey."],
+  ["recruit_talent", "Recruit Talent", "Attract potential employees."],
+  ["promote_event", "Promote an Event", "Increase registrations or attendance for an event or webinar."],
+  ["entertain", "Entertain Your Audience", "Create engaging or humorous content to increase visibility."],
+];
+
+const PLATFORMS = ["TikTok", "Instagram", "LinkedIn", "Other"];
+
+let currentProfile = null;
+let currentLabels = null;
+let editingCategories = false;
+
 function setStatus(message, kind) {
   statusEl.textContent = message || "";
   statusEl.className = "status" + (kind ? " " + kind : "");
 }
 
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function labelize(key) {
+  return key
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 function renderValue(value) {
-  if (Array.isArray(value)) {
-    if (value.length === 0) {
-      return `<div class="field-value empty">— sin datos —</div>`;
-    }
-    const items = value.map((v) => `<li>${escapeHtml(v)}</li>`).join("");
-    return `<div class="field-value"><ul>${items}</ul></div>`;
-  }
   if (!value || !String(value).trim()) {
     return `<div class="field-value empty">— sin datos —</div>`;
   }
@@ -33,41 +68,34 @@ function renderValue(value) {
   return `<div class="field-value">${escapeHtml(value)}</div>`;
 }
 
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+function renderFieldControl(categoryKey, fieldKey, value) {
+  if (!editingCategories) {
+    return renderValue(value);
+  }
+  const dataField = fieldKey || "";
+  return `<textarea class="field-edit" data-category="${categoryKey}" data-field="${dataField}" rows="2">${escapeHtml(
+    value
+  )}</textarea>`;
 }
 
-function labelize(key) {
-  return key
-    .split("_")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-}
-
-function renderResults(data) {
-  const { profile, category_labels } = data;
-  resultsEl.innerHTML = "";
-
+function buildCategoryGrid() {
   const grid = document.createElement("div");
   grid.className = "grid";
 
-  for (const [key, label] of category_labels) {
-    const value = profile[key];
+  for (const [key, label] of currentLabels) {
+    const value = currentProfile[key];
     const card = document.createElement("div");
     card.className = "panel category-card";
 
     if (typeof value === "string") {
-      card.innerHTML = `<h2>${label}</h2>${renderValue(value)}`;
+      card.innerHTML = `<h2>${label}</h2>${renderFieldControl(key, null, value)}`;
     } else {
       const fields = Object.entries(value)
         .map(
           ([fieldKey, fieldValue]) => `
             <div class="field">
               <div class="field-label">${labelize(fieldKey)}</div>
-              ${renderValue(fieldValue)}
+              ${renderFieldControl(key, fieldKey, fieldValue)}
             </div>`
         )
         .join("");
@@ -77,7 +105,166 @@ function renderResults(data) {
     grid.appendChild(card);
   }
 
-  resultsEl.appendChild(grid);
+  return grid;
+}
+
+function renderCategoryView() {
+  resultsEl.innerHTML = "";
+  resultsEl.appendChild(buildCategoryGrid());
+
+  const actions = document.createElement("div");
+  actions.className = "panel actions-row";
+  actions.innerHTML = editingCategories
+    ? `<button type="button" id="save-edits-btn">Guardar cambios</button>`
+    : `<button type="button" id="edit-btn" class="secondary">Editar categorías</button>
+       <button type="button" id="continue-btn">Continuar →</button>`;
+  resultsEl.appendChild(actions);
+
+  if (editingCategories) {
+    document.getElementById("save-edits-btn").addEventListener("click", saveEdits);
+  } else {
+    document.getElementById("edit-btn").addEventListener("click", () => {
+      editingCategories = true;
+      renderCategoryView();
+    });
+    document.getElementById("continue-btn").addEventListener("click", renderCampaignBrief);
+  }
+}
+
+function saveEdits() {
+  document.querySelectorAll(".field-edit").forEach((el) => {
+    const category = el.dataset.category;
+    const field = el.dataset.field;
+    if (field) {
+      currentProfile[category][field] = el.value.trim();
+    } else {
+      currentProfile[category] = el.value.trim();
+    }
+  });
+  editingCategories = false;
+  renderCategoryView();
+}
+
+function renderCampaignBrief() {
+  resultsEl.innerHTML = "";
+
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = `
+    <h2>Brief de este contenido</h2>
+
+    <div class="field">
+      <div class="field-label">¿Para qué es este contenido?</div>
+      <select id="goal-select">
+        ${GOALS.map(
+          ([value, title, desc]) =>
+            `<option value="${value}">${escapeHtml(title)} — ${escapeHtml(desc)}</option>`
+        ).join("")}
+      </select>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Plataforma</div>
+      <div class="pill-group" id="platform-group">
+        ${PLATFORMS.map(
+          (p) => `<button type="button" class="pill" data-platform="${p}">${p}</button>`
+        ).join("")}
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">¿De qué trata este contenido en específico?</div>
+      <textarea id="topic-input" rows="3" placeholder="Ej: Un reel mostrando 3 errores comunes al usar retinol..."></textarea>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Duración preferida (opcional)</div>
+      <input type="text" id="duration-input" placeholder="Ej: 30 segundos — déjalo vacío si no tienes preferencia" />
+    </div>
+
+    <div class="actions-row">
+      <button type="button" id="brief-back-btn" class="secondary">← Volver a categorías</button>
+      <button type="button" id="brief-submit-btn">Ver resumen</button>
+    </div>
+    <div id="brief-status" class="status"></div>
+  `;
+  resultsEl.appendChild(panel);
+
+  let selectedPlatform = null;
+  document.querySelectorAll("#platform-group .pill").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document
+        .querySelectorAll("#platform-group .pill")
+        .forEach((b) => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      selectedPlatform = btn.dataset.platform;
+    });
+  });
+
+  document.getElementById("brief-back-btn").addEventListener("click", renderCategoryView);
+
+  document.getElementById("brief-submit-btn").addEventListener("click", () => {
+    const briefStatus = document.getElementById("brief-status");
+    const goalValue = document.getElementById("goal-select").value;
+    const goal = GOALS.find(([v]) => v === goalValue);
+    const topic = document.getElementById("topic-input").value.trim();
+    const duration = document.getElementById("duration-input").value.trim();
+
+    if (!selectedPlatform) {
+      briefStatus.textContent = "Selecciona una plataforma.";
+      briefStatus.className = "status error";
+      return;
+    }
+    if (!topic) {
+      briefStatus.textContent = "Cuéntanos brevemente de qué trata el contenido.";
+      briefStatus.className = "status error";
+      return;
+    }
+
+    renderFinalSummary({
+      goal: { value: goal[0], label: goal[1], description: goal[2] },
+      platform: selectedPlatform,
+      topic,
+      duration,
+    });
+  });
+}
+
+function renderFinalSummary(brief) {
+  resultsEl.innerHTML = "";
+
+  const panel = document.createElement("div");
+  panel.className = "panel";
+  panel.innerHTML = `
+    <h2>Resumen del brief</h2>
+    <div class="field">
+      <div class="field-label">Objetivo</div>
+      <div class="field-value">${escapeHtml(brief.goal.label)}</div>
+    </div>
+    <div class="field">
+      <div class="field-label">Plataforma</div>
+      <div class="field-value">${escapeHtml(brief.platform)}</div>
+    </div>
+    <div class="field">
+      <div class="field-label">Tema</div>
+      <div class="field-value">${escapeHtml(brief.topic)}</div>
+    </div>
+    <div class="field">
+      <div class="field-label">Duración preferida</div>
+      ${renderValue(brief.duration)}
+    </div>
+    <div class="actions-row">
+      <button type="button" id="back-to-brief-btn" class="secondary">← Editar brief</button>
+    </div>
+  `;
+  resultsEl.appendChild(panel);
+  document.getElementById("back-to-brief-btn").addEventListener("click", renderCampaignBrief);
+
+  const referenceHeading = document.createElement("p");
+  referenceHeading.className = "status";
+  referenceHeading.textContent = "Perfil de marca usado (referencia):";
+  resultsEl.appendChild(referenceHeading);
+  resultsEl.appendChild(buildCategoryGrid());
 }
 
 form.addEventListener("submit", async (e) => {
@@ -117,7 +304,11 @@ form.addEventListener("submit", async (e) => {
       }.`,
       ""
     );
-    renderResults(data);
+
+    currentProfile = data.profile;
+    currentLabels = data.category_labels;
+    editingCategories = false;
+    renderCategoryView();
   } catch (err) {
     setStatus("No se pudo conectar con el servidor.", "error");
   } finally {
