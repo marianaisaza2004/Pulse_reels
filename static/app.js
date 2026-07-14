@@ -379,8 +379,9 @@ async function generateScript() {
   const genStatus = document.getElementById("generate-status");
   btn.disabled = true;
   genStatus.textContent =
-    "Evaluando la idea contra el Viral Engine y, si pasa, escribiendo el guión " +
-    "(puede tardar hasta 30-40 segundos)...";
+    "Evaluando la idea contra el Viral Engine — si el score no es suficiente, la " +
+    "va a mejorar y reevaluar sola antes de escribir el guión (puede tardar hasta " +
+    "60 segundos)...";
   genStatus.className = "status loading";
 
   try {
@@ -398,7 +399,14 @@ async function generateScript() {
       return;
     }
 
-    currentScoreData = { scores: data.scores, total: data.total, threshold: data.threshold };
+    currentScoreData = {
+      scores: data.scores,
+      total: data.total,
+      threshold: data.threshold,
+      finalTopic: data.final_topic,
+      roundsTried: data.rounds_tried,
+      originalTopic: currentBrief.topic,
+    };
 
     if (!data.produced) {
       renderScoreGate(data);
@@ -464,7 +472,7 @@ function buildMomentBlock(key, label) {
     </div>`;
 }
 
-function renderScoreGrid(scores, total, threshold) {
+function renderScoreGrid(scores, total, threshold, refinement) {
   const panel = document.createElement("div");
   panel.className = "panel";
 
@@ -480,12 +488,21 @@ function renderScoreGrid(scores, total, threshold) {
     })
     .join("");
 
+  const refinementNote =
+    refinement && refinement.roundsTried > 1 && refinement.finalTopic !== refinement.originalTopic
+      ? `<div class="field">
+           <div class="field-label">Ángulo optimizado automáticamente (${refinement.roundsTried} intentos)</div>
+           <div class="field-value">${escapeHtml(refinement.finalTopic)}</div>
+         </div>`
+      : "";
+
   panel.innerHTML = `
     <h2>Viral Engine</h2>
     <p class="status ${passed ? "" : "error"}" style="font-size: 1.1rem; font-weight: 700;">
       Score: ${total}/100 (mínimo para generar guión: ${threshold})
     </p>
     <p class="intake-description">${VIRAL_ENGINE_DISCLAIMER}</p>
+    ${refinementNote}
     ${rows}
   `;
   return panel;
@@ -496,13 +513,23 @@ function renderScoreGate(data) {
   if (btn) btn.disabled = false;
 
   resultsEl.innerHTML = "";
-  resultsEl.appendChild(renderScoreGrid(data.scores, data.total, data.threshold));
+  resultsEl.appendChild(
+    renderScoreGrid(data.scores, data.total, data.threshold, {
+      roundsTried: data.rounds_tried,
+      finalTopic: data.final_topic,
+      originalTopic: currentBrief.topic,
+    })
+  );
 
   const panel = document.createElement("div");
   panel.className = "panel";
+  const triedMsg =
+    data.rounds_tried > 1
+      ? `Ya intentamos mejorarla automáticamente ${data.rounds_tried} veces, pero no alcanzó el score mínimo.`
+      : "Esta idea no alcanzó el score mínimo para generar el guión todavía.";
   panel.innerHTML = `
     <p class="status error">
-      Esta idea no alcanzó el score mínimo para generar el guión todavía.
+      ${triedMsg}
     </p>
     <div class="field">
       <div class="field-label">Ángulo más fuerte sugerido para la misma idea</div>
@@ -643,7 +670,11 @@ function renderScriptView() {
   resultsEl.innerHTML = "";
   if (currentScoreData) {
     resultsEl.appendChild(
-      renderScoreGrid(currentScoreData.scores, currentScoreData.total, currentScoreData.threshold)
+      renderScoreGrid(currentScoreData.scores, currentScoreData.total, currentScoreData.threshold, {
+        roundsTried: currentScoreData.roundsTried,
+        finalTopic: currentScoreData.finalTopic,
+        originalTopic: currentScoreData.originalTopic,
+      })
     );
   }
   resultsEl.appendChild(buildScriptPanelElement());

@@ -1,9 +1,10 @@
 """Viral Engine scoring + reel script generation.
 
 Score the reel idea against 10 criteria before writing anything — a strict,
-repeatable gate, not a creative step. Only draft the actual script once the
-concept clears 70/100; below that, suggest a sharper angle for the same
-idea instead of a script.
+repeatable gate, not a creative step. If the idea doesn't score well, the
+engine automatically sharpens the same angle and re-scores it (up to a few
+rounds, aiming for as close to a perfect score as it can get), and only
+drafts the actual script once the best attempt clears 70/100.
 """
 
 import json
@@ -70,8 +71,54 @@ more personal, more specific, more contrarian, add a concrete stake or number). 
 sentences."""
 
 
+MIN_SCORE_TO_PRODUCE = 70
+TARGET_SCORE = 90
+MAX_REFINEMENT_ROUNDS = 2
+
+
 def total_score(scores: dict) -> int:
     return sum(scores[crit]["score"] for crit in VIRAL_CRITERIA)
+
+
+def refine_idea(profile: dict, brief: dict) -> dict:
+    """Score the idea once. If it already clears the bar, stop there — no need
+    to spend extra rounds on an idea that's already good. Only if it scores
+    below the minimum does it automatically sharpen the same angle and
+    re-score, up to a few rounds, pushing for as close to a perfect score as
+    it can get before handing off to script writing. Always keeps the
+    best-scoring attempt, even if a later round regresses."""
+    scores = score_concept(profile, brief)
+    total = total_score(scores)
+    attempts = [{"topic": brief["topic"], "total": total}]
+
+    if total >= MIN_SCORE_TO_PRODUCE:
+        return {"scores": scores, "total": total, "brief": dict(brief), "attempts": attempts}
+
+    best_scores, best_total, best_brief = scores, total, dict(brief)
+    working_brief = dict(brief)
+
+    for _ in range(MAX_REFINEMENT_ROUNDS):
+        working_brief = dict(working_brief)
+        working_brief["topic"] = scores["stronger_angle"]
+
+        scores = score_concept(profile, working_brief)
+        total = total_score(scores)
+        attempts.append({"topic": working_brief["topic"], "total": total})
+
+        if total > best_total:
+            best_total = total
+            best_scores = scores
+            best_brief = dict(working_brief)
+
+        if total >= TARGET_SCORE:
+            break
+
+    return {
+        "scores": best_scores,
+        "total": best_total,
+        "brief": best_brief,
+        "attempts": attempts,
+    }
 
 
 def score_concept(profile: dict, brief: dict) -> dict:
