@@ -72,7 +72,7 @@ sentences."""
 
 
 MIN_SCORE_TO_PRODUCE = 70
-TARGET_SCORE = 90
+TARGET_SCORE = 97
 MAX_REFINEMENT_ROUNDS = 2
 
 
@@ -81,26 +81,20 @@ def total_score(scores: dict) -> int:
 
 
 def refine_idea(profile: dict, brief: dict) -> dict:
-    """Score the idea once. If it already clears the bar, stop there — no need
-    to spend extra rounds on an idea that's already good. Only if it scores
-    below the minimum does it automatically sharpen the same angle and
-    re-score, up to a few rounds, pushing for as close to a perfect score as
-    it can get before handing off to script writing. Always keeps the
-    best-scoring attempt, even if a later round regresses."""
-    scores = score_concept(profile, brief)
-    total = total_score(scores)
-    attempts = [{"topic": brief["topic"], "total": total}]
-
-    if total >= MIN_SCORE_TO_PRODUCE:
-        return {"scores": scores, "total": total, "brief": dict(brief), "attempts": attempts}
-
-    best_scores, best_total, best_brief = scores, total, dict(brief)
+    """Always try to push the idea as close to a perfect 100/100 as it can get:
+    score it, then keep sharpening the same angle and re-scoring for a few
+    rounds regardless of whether an earlier round already cleared the minimum
+    to produce — it only stops early once a round lands within a couple points
+    of perfect, or the round budget runs out. Always keeps the best-scoring
+    attempt seen, even if a later round regresses. The 70-point minimum is
+    applied afterward, purely to decide whether to write the script."""
     working_brief = dict(brief)
+    best_scores = None
+    best_total = -1
+    best_brief = working_brief
+    attempts = []
 
-    for _ in range(MAX_REFINEMENT_ROUNDS):
-        working_brief = dict(working_brief)
-        working_brief["topic"] = scores["stronger_angle"]
-
+    for round_num in range(MAX_REFINEMENT_ROUNDS + 1):
         scores = score_concept(profile, working_brief)
         total = total_score(scores)
         attempts.append({"topic": working_brief["topic"], "total": total})
@@ -110,8 +104,11 @@ def refine_idea(profile: dict, brief: dict) -> dict:
             best_scores = scores
             best_brief = dict(working_brief)
 
-        if total >= TARGET_SCORE:
+        if total >= TARGET_SCORE or round_num == MAX_REFINEMENT_ROUNDS:
             break
+
+        working_brief = dict(working_brief)
+        working_brief["topic"] = scores["stronger_angle"]
 
     return {
         "scores": best_scores,
