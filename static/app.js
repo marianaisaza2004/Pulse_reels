@@ -69,6 +69,8 @@ let currentBrief = null;
 let currentScript = null;
 let momentUIMode = {};
 let currentScoreData = null;
+let teleprompterInterval = null;
+let teleprompterFontSize = 2.2;
 
 function setStatus(message, kind) {
   statusEl.textContent = message || "";
@@ -621,6 +623,7 @@ function buildScriptPanelElement() {
     <div class="actions-row">
       <button type="button" id="back-to-summary-btn" class="secondary">← Volver al resumen</button>
       <button type="button" id="regenerate-btn">Generar otra versión</button>
+      <button type="button" id="teleprompter-btn" class="secondary">🎥 Grabar (Teleprompter)</button>
     </div>
   `;
 
@@ -663,8 +666,81 @@ function buildScriptPanelElement() {
     .querySelector("#back-to-summary-btn")
     .addEventListener("click", () => renderFinalSummary(currentBrief));
   panel.querySelector("#regenerate-btn").addEventListener("click", generateScript);
+  panel.querySelector("#teleprompter-btn").addEventListener("click", openTeleprompter);
 
   return panel;
+}
+
+function buildTeleprompterLines() {
+  return MOMENT_LABELS.map(([key]) => currentScript[key])
+    .filter((m) => m && m.script && m.script.trim())
+    .map((m) => `<p class="tp-line">${escapeHtml(m.script)}</p>`)
+    .join("");
+}
+
+function openTeleprompter() {
+  const overlay = document.createElement("div");
+  overlay.id = "teleprompter-overlay";
+  overlay.innerHTML = `
+    <div class="tp-controls">
+      <button type="button" id="tp-exit-btn" class="secondary">✕ Salir</button>
+      <div class="tp-controls-right">
+        <button type="button" id="tp-font-minus" class="secondary">A-</button>
+        <button type="button" id="tp-font-plus" class="secondary">A+</button>
+        <input type="range" id="tp-speed" min="10" max="120" value="40" title="Velocidad de scroll" />
+        <button type="button" id="tp-play-btn">▶ Reproducir</button>
+      </div>
+    </div>
+    <div class="tp-content" id="tp-content" style="font-size: ${teleprompterFontSize}rem;">
+      ${buildTeleprompterLines()}
+      <div class="tp-spacer"></div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  document.getElementById("tp-exit-btn").addEventListener("click", closeTeleprompter);
+  document.getElementById("tp-font-minus").addEventListener("click", () => adjustTeleprompterFont(-0.2));
+  document.getElementById("tp-font-plus").addEventListener("click", () => adjustTeleprompterFont(0.2));
+  document.getElementById("tp-play-btn").addEventListener("click", toggleTeleprompterScroll);
+}
+
+function adjustTeleprompterFont(delta) {
+  teleprompterFontSize = Math.max(1.2, Math.min(4, teleprompterFontSize + delta));
+  const content = document.getElementById("tp-content");
+  if (content) content.style.fontSize = `${teleprompterFontSize}rem`;
+}
+
+function toggleTeleprompterScroll() {
+  const playBtn = document.getElementById("tp-play-btn");
+  const content = document.getElementById("tp-content");
+  const speedInput = document.getElementById("tp-speed");
+
+  if (teleprompterInterval) {
+    clearInterval(teleprompterInterval);
+    teleprompterInterval = null;
+    playBtn.textContent = "▶ Reproducir";
+    return;
+  }
+
+  playBtn.textContent = "⏸ Pausar";
+  teleprompterInterval = setInterval(() => {
+    const pxPerSecond = Number(speedInput.value);
+    content.scrollTop += pxPerSecond / 10;
+    if (content.scrollTop + content.clientHeight >= content.scrollHeight) {
+      clearInterval(teleprompterInterval);
+      teleprompterInterval = null;
+      playBtn.textContent = "▶ Reproducir";
+    }
+  }, 100);
+}
+
+function closeTeleprompter() {
+  if (teleprompterInterval) {
+    clearInterval(teleprompterInterval);
+    teleprompterInterval = null;
+  }
+  const overlay = document.getElementById("teleprompter-overlay");
+  if (overlay) overlay.remove();
 }
 
 function renderScriptView() {
