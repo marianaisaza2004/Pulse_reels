@@ -10,15 +10,13 @@ from fastapi.staticfiles import StaticFiles
 from app.categorize import CategorizationRefused, categorize
 from app.extract_text import UnsupportedFileType, extract_text
 from app.schema import CATEGORY_LABELS
-from app.script_engine import ScriptGenerationRefused, generate_script, score_concept, total_score
+from app.script_engine import ScriptGenerationRefused, generate_script
 from app import storage
 
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = BASE_DIR / "static"
-
-SCORE_THRESHOLD = 70
 
 app = FastAPI(title="Pulse — Brand Intake")
 
@@ -128,27 +126,11 @@ def script_endpoint(payload: dict = Body(...)):
         raise HTTPException(status_code=400, detail="Falta el perfil o el brief de contenido.")
 
     try:
-        scores = score_concept(profile, brief)
+        script = generate_script(profile, brief)
     except ScriptGenerationRefused as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-    score = total_score(scores)
-    produced = score >= SCORE_THRESHOLD
-
-    result = {
-        "scores": scores,
-        "total": score,
-        "threshold": SCORE_THRESHOLD,
-        "produced": produced,
-    }
-
-    if produced:
-        try:
-            result["script"] = generate_script(profile, brief, scores)
-        except ScriptGenerationRefused as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
-
-    return result
+    return {"script": script}
 
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

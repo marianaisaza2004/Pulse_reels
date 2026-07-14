@@ -34,19 +34,6 @@ const GOALS = [
 
 const PLATFORMS = ["TikTok", "Instagram", "LinkedIn", "Other"];
 
-const CRITERIA_LABELS = {
-  clarity: "Claridad",
-  curiosity: "Curiosidad",
-  emotion: "Emoción",
-  shareability: "Shareability",
-  save_worthiness: "Save-worthiness",
-  conversation_potential: "Potencial de conversación",
-  simplicity: "Simplicidad (una sola idea)",
-  novelty: "Novedad",
-  authority: "Autoridad",
-  hook_strength: "Fuerza del hook",
-};
-
 const MOMENT_LABELS = [
   ["hook", "Hook"],
   ["beat_1", "Beat 1"],
@@ -361,7 +348,7 @@ async function generateScript() {
   const btn = document.getElementById("generate-script-btn");
   const genStatus = document.getElementById("generate-status");
   btn.disabled = true;
-  genStatus.textContent = "Evaluando el concepto y escribiendo el guión (puede tardar hasta 30-40 segundos)...";
+  genStatus.textContent = "Escribiendo el guión (puede tardar hasta 20-30 segundos)...";
   genStatus.className = "status loading";
 
   try {
@@ -396,54 +383,8 @@ async function generateScript() {
   }
 }
 
-function renderScoreGrid(scores, total, threshold) {
-  const panel = document.createElement("div");
-  panel.className = "panel";
-
-  const totalClass = total >= threshold ? "" : "error";
-  const rows = Object.entries(CRITERIA_LABELS)
-    .map(
-      ([key, label]) => `
-        <div class="field">
-          <div class="field-label">${escapeHtml(label)} — ${scores[key].score}/10</div>
-          <div class="field-value">${escapeHtml(scores[key].note)}</div>
-        </div>`
-    )
-    .join("");
-
-  panel.innerHTML = `
-    <h2>Viral Engine</h2>
-    <p class="status ${totalClass}" style="font-size: 1.1rem; font-weight: 600;">
-      Score total: ${total}/100 (mínimo para producir: ${threshold})
-    </p>
-    ${rows}
-  `;
-  return panel;
-}
-
 function renderScriptResult(data) {
   resultsEl.innerHTML = "";
-  resultsEl.appendChild(renderScoreGrid(data.scores, data.total, data.threshold));
-
-  if (!data.produced) {
-    const panel = document.createElement("div");
-    panel.className = "panel";
-    panel.innerHTML = `
-      <p class="status error">
-        Este concepto no alcanzó el score mínimo para producir un guión. Ajusta el tema,
-        el objetivo o el ángulo en el brief usando las sugerencias de arriba, y vuelve a
-        intentar.
-      </p>
-      <div class="actions-row">
-        <button type="button" id="back-to-summary-btn" class="secondary">← Volver al resumen</button>
-      </div>
-    `;
-    resultsEl.appendChild(panel);
-    document
-      .getElementById("back-to-summary-btn")
-      .addEventListener("click", () => renderFinalSummary(currentBrief));
-    return;
-  }
 
   const script = data.script;
   const panel = document.createElement("div");
