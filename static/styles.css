@@ -153,6 +153,29 @@ button:hover:not(:disabled) {
   font-style: italic;
 }
 
+.moment-block {
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+
+.moment-block:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.moment-block textarea,
+.moment-block input[type="text"] {
+  margin-bottom: 8px;
+}
+
+.moment-block .actions-row {
+  margin-top: 4px;
+}
+
+.moment-block .actions-row button {
+  margin-top: 0;
+}
+
 .field-value ul {
   margin: 4px 0 0;
   padding-left: 18px;

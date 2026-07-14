@@ -71,6 +71,18 @@ Never invent brand facts that are not present in the brand profile. Respect ever
 constraint in the profile (forbidden claims, legal restrictions, mandatory CTA, words to \
 avoid). Write in the same language as the brand profile and topic."""
 
+REVISE_SYSTEM_PROMPT = """You are the script-editing engine for Pulse. The user already \
+has a full reel script and wants exactly one moment of it revised based on their specific \
+instruction — everything else in the script is context for continuity, not something \
+you're rewriting.
+
+Read the full existing script to keep tone, pacing, and any references between moments \
+consistent, then rewrite ONLY the requested moment according to the user's instruction. \
+Keep roughly the same time range unless the instruction explicitly asks to change pacing \
+or duration. Stay in the brand's voice and respect every constraint in the brand profile \
+(forbidden claims, legal restrictions, words to avoid). Never invent brand facts not \
+present in the profile. Write in the same language as the rest of the script."""
+
 
 class ScriptGenerationRefused(RuntimeError):
     pass
@@ -105,6 +117,37 @@ def generate_script(profile: dict, brief: dict) -> dict:
 
     if response.stop_reason == "refusal":
         raise ScriptGenerationRefused("El modelo no pudo generar el guión para este contenido.")
+
+    text_block = next(b for b in response.content if b.type == "text")
+    return json.loads(text_block.text)
+
+
+def revise_moment(
+    profile: dict, brief: dict, script: dict, moment_key: str, instruction: str
+) -> dict:
+    if moment_key not in MOMENT_KEYS:
+        raise ValueError(f"Unknown moment key: {moment_key}")
+
+    client = Anthropic()
+
+    user_content = (
+        f"Brand profile (JSON):\n{json.dumps(profile, ensure_ascii=False)}\n\n"
+        f"Content brief:\n{_brief_to_text(brief)}\n\n"
+        f"Full current script (JSON):\n{json.dumps(script, ensure_ascii=False)}\n\n"
+        f"Revise only the '{moment_key}' moment. The user's instruction for this change:\n"
+        f"{instruction}"
+    )
+
+    response = client.messages.create(
+        model=MODEL,
+        max_tokens=2000,
+        output_config={"effort": "medium", "format": {"type": "json_schema", "schema": _moment_schema()}},
+        system=REVISE_SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": user_content}],
+    )
+
+    if response.stop_reason == "refusal":
+        raise ScriptGenerationRefused("El modelo no pudo ajustar esta parte del guión.")
 
     text_block = next(b for b in response.content if b.type == "text")
     return json.loads(text_block.text)

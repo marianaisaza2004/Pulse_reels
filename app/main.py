@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from app.categorize import CategorizationRefused, categorize
 from app.extract_text import UnsupportedFileType, extract_text
 from app.schema import CATEGORY_LABELS
-from app.script_engine import ScriptGenerationRefused, generate_script
+from app.script_engine import MOMENT_KEYS, ScriptGenerationRefused, generate_script, revise_moment
 from app import storage
 
 load_dotenv()
@@ -131,6 +131,35 @@ def script_endpoint(payload: dict = Body(...)):
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     return {"script": script}
+
+
+@app.post("/api/script/revise")
+def revise_script_endpoint(payload: dict = Body(...)):
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        raise HTTPException(
+            status_code=500,
+            detail="Falta configurar ANTHROPIC_API_KEY en el servidor (ver .env.example).",
+        )
+
+    profile = payload.get("profile")
+    brief = payload.get("brief")
+    script = payload.get("script")
+    moment_key = payload.get("moment_key")
+    instruction = (payload.get("instruction") or "").strip()
+
+    if not isinstance(profile, dict) or not isinstance(brief, dict) or not isinstance(script, dict):
+        raise HTTPException(status_code=400, detail="Falta el perfil, el brief o el guión.")
+    if moment_key not in MOMENT_KEYS:
+        raise HTTPException(status_code=400, detail="Parte del guión inválida.")
+    if not instruction:
+        raise HTTPException(status_code=400, detail="Escribe qué quieres que cambie.")
+
+    try:
+        moment = revise_moment(profile, brief, script, moment_key, instruction)
+    except ScriptGenerationRefused as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    return {"moment": moment}
 
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

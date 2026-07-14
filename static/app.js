@@ -48,6 +48,8 @@ let currentLabels = null;
 let editingCategories = false;
 let currentEmail = null;
 let currentBrief = null;
+let currentScript = null;
+let momentUIMode = {};
 
 function setStatus(message, kind) {
   statusEl.textContent = message || "";
@@ -344,6 +346,16 @@ function renderFinalSummary(brief) {
   resultsEl.appendChild(buildCategoryGrid());
 }
 
+function briefPayload() {
+  return {
+    goal_label: currentBrief.goal.label,
+    goal_description: currentBrief.goal.description,
+    platform: currentBrief.platform,
+    topic: currentBrief.topic,
+    duration: currentBrief.duration,
+  };
+}
+
 async function generateScript() {
   const btn = document.getElementById("generate-script-btn");
   const genStatus = document.getElementById("generate-status");
@@ -355,16 +367,7 @@ async function generateScript() {
     const res = await fetch("/api/script", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        profile: currentProfile,
-        brief: {
-          goal_label: currentBrief.goal.label,
-          goal_description: currentBrief.goal.description,
-          platform: currentBrief.platform,
-          topic: currentBrief.topic,
-          duration: currentBrief.duration,
-        },
-      }),
+      body: JSON.stringify({ profile: currentProfile, brief: briefPayload() }),
     });
     const data = await res.json();
 
@@ -375,7 +378,9 @@ async function generateScript() {
       return;
     }
 
-    renderScriptResult(data);
+    currentScript = data.script;
+    momentUIMode = {};
+    renderScriptPanel();
   } catch (err) {
     genStatus.textContent = "No se pudo conectar con el servidor.";
     genStatus.className = "status error";
@@ -383,37 +388,72 @@ async function generateScript() {
   }
 }
 
-function renderScriptResult(data) {
+function buildMomentBlock(key, label) {
+  const m = currentScript[key];
+  const mode = momentUIMode[key] || "view";
+
+  if (mode !== "edit" && !m.time && !m.visual && !m.script) {
+    return "";
+  }
+
+  if (mode === "edit") {
+    return `
+      <div class="field moment-block" data-moment="${key}">
+        <div class="field-label">${label}</div>
+        <input type="text" class="moment-time-input" placeholder="Tiempo, ej. 0:00-0:03" value="${escapeHtml(m.time)}" />
+        <textarea class="moment-visual-input" rows="2" placeholder="Dirección visual">${escapeHtml(m.visual)}</textarea>
+        <textarea class="moment-script-input" rows="2" placeholder="Texto a decir en cámara">${escapeHtml(m.script)}</textarea>
+        <div class="actions-row">
+          <button type="button" class="moment-save-btn">Guardar</button>
+          <button type="button" class="moment-cancel-btn secondary">Cancelar</button>
+        </div>
+      </div>`;
+  }
+
+  if (mode === "ai-fix") {
+    return `
+      <div class="field moment-block" data-moment="${key}">
+        <div class="field-label">${label} (${escapeHtml(m.time)})</div>
+        <div class="field-value"><em>${escapeHtml(m.visual)}</em></div>
+        <div class="field-value">"${escapeHtml(m.script)}"</div>
+        <textarea class="moment-instruction-input" rows="2" placeholder='Ej: "Hazlo más gracioso", "empieza con una pregunta", "que sea más corto"...'></textarea>
+        <div class="actions-row">
+          <button type="button" class="moment-ai-submit-btn">Pedir ajuste a la IA</button>
+          <button type="button" class="moment-cancel-btn secondary">Cancelar</button>
+        </div>
+        <div class="status moment-ai-status"></div>
+      </div>`;
+  }
+
+  return `
+    <div class="field moment-block" data-moment="${key}">
+      <div class="field-label">${label} (${escapeHtml(m.time)})</div>
+      <div class="field-value"><em>${escapeHtml(m.visual)}</em></div>
+      <div class="field-value">"${escapeHtml(m.script)}"</div>
+      <div class="actions-row">
+        <button type="button" class="moment-edit-btn secondary">Editar manualmente</button>
+        <button type="button" class="moment-ai-btn secondary">Pedir ajuste a la IA</button>
+      </div>
+    </div>`;
+}
+
+function renderScriptPanel() {
   resultsEl.innerHTML = "";
 
-  const script = data.script;
   const panel = document.createElement("div");
   panel.className = "panel";
-
-  const moments = MOMENT_LABELS.filter(([key]) => {
-    const m = script[key];
-    return m.time || m.visual || m.script;
-  })
-    .map(
-      ([key, label]) => `
-        <div class="field">
-          <div class="field-label">${label} (${escapeHtml(script[key].time)})</div>
-          <div class="field-value"><em>${escapeHtml(script[key].visual)}</em></div>
-          <div class="field-value">"${escapeHtml(script[key].script)}"</div>
-        </div>`
-    )
-    .join("");
+  const moments = MOMENT_LABELS.map(([key, label]) => buildMomentBlock(key, label)).join("");
 
   panel.innerHTML = `
     <h2>Guión</h2>
     ${moments}
     <div class="field">
       <div class="field-label">Pattern interrupts</div>
-      ${renderValue(script.pattern_interrupts)}
+      ${renderValue(currentScript.pattern_interrupts)}
     </div>
     <div class="field">
       <div class="field-label">Por qué funciona</div>
-      <div class="field-value">${escapeHtml(script.why_it_works)}</div>
+      <div class="field-value">${escapeHtml(currentScript.why_it_works)}</div>
     </div>
     <div class="actions-row">
       <button type="button" id="back-to-summary-btn" class="secondary">← Volver al resumen</button>
@@ -421,10 +461,89 @@ function renderScriptResult(data) {
     </div>
   `;
   resultsEl.appendChild(panel);
+
+  panel.querySelectorAll(".moment-edit-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      momentUIMode[btn.closest(".moment-block").dataset.moment] = "edit";
+      renderScriptPanel();
+    });
+  });
+  panel.querySelectorAll(".moment-ai-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      momentUIMode[btn.closest(".moment-block").dataset.moment] = "ai-fix";
+      renderScriptPanel();
+    });
+  });
+  panel.querySelectorAll(".moment-cancel-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      momentUIMode[btn.closest(".moment-block").dataset.moment] = "view";
+      renderScriptPanel();
+    });
+  });
+  panel.querySelectorAll(".moment-save-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const block = btn.closest(".moment-block");
+      const key = block.dataset.moment;
+      currentScript[key] = {
+        time: block.querySelector(".moment-time-input").value.trim(),
+        visual: block.querySelector(".moment-visual-input").value.trim(),
+        script: block.querySelector(".moment-script-input").value.trim(),
+      };
+      momentUIMode[key] = "view";
+      renderScriptPanel();
+    });
+  });
+  panel.querySelectorAll(".moment-ai-submit-btn").forEach((btn) => {
+    btn.addEventListener("click", () => requestMomentFix(btn.closest(".moment-block").dataset.moment));
+  });
+
   document
     .getElementById("back-to-summary-btn")
     .addEventListener("click", () => renderFinalSummary(currentBrief));
   document.getElementById("regenerate-btn").addEventListener("click", generateScript);
+}
+
+async function requestMomentFix(key) {
+  const block = document.querySelector(`.moment-block[data-moment="${key}"]`);
+  const instruction = block.querySelector(".moment-instruction-input").value.trim();
+  const aiStatus = block.querySelector(".moment-ai-status");
+
+  if (!instruction) {
+    aiStatus.textContent = "Escribe qué quieres que cambie.";
+    aiStatus.className = "status error moment-ai-status";
+    return;
+  }
+
+  aiStatus.textContent = "Ajustando...";
+  aiStatus.className = "status loading moment-ai-status";
+
+  try {
+    const res = await fetch("/api/script/revise", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        profile: currentProfile,
+        brief: briefPayload(),
+        script: currentScript,
+        moment_key: key,
+        instruction,
+      }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      aiStatus.textContent = data.detail || "Ocurrió un error.";
+      aiStatus.className = "status error moment-ai-status";
+      return;
+    }
+
+    currentScript[key] = data.moment;
+    momentUIMode[key] = "view";
+    renderScriptPanel();
+  } catch (err) {
+    aiStatus.textContent = "No se pudo conectar con el servidor.";
+    aiStatus.className = "status error moment-ai-status";
+  }
 }
 
 form.addEventListener("submit", async (e) => {
