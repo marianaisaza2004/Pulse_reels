@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pulse — Brand Intake</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Pulse — Brand Intake</h1>
+      <p>Sube o pega la información de la empresa. Sin importar el formato, se resume en las 10 categorías estándar.</p>
+    </header>
+
+    <section class="panel">
+      <form id="intake-form">
+        <textarea id="text-input" placeholder="Pega aquí la información de la empresa (descripción, posts, brand guidelines, lo que tengas)..."></textarea>
+        <div>
+          <input type="file" id="file-input" accept=".txt,.md,.csv,.pdf,.docx" />
+        </div>
+        <button type="submit" id="submit-btn">Analizar</button>
+        <div id="status" class="status"></div>
+      </form>
+    </section>
+
+    <section id="results"></section>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
