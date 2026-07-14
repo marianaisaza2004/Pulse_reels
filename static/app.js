@@ -21,6 +21,15 @@ function renderValue(value) {
   if (!value || !String(value).trim()) {
     return `<div class="field-value empty">— sin datos —</div>`;
   }
+  if (value.includes("; ")) {
+    const items = value
+      .split("; ")
+      .map((v) => v.trim())
+      .filter(Boolean)
+      .map((v) => `<li>${escapeHtml(v)}</li>`)
+      .join("");
+    return `<div class="field-value"><ul>${items}</ul></div>`;
+  }
   return `<div class="field-value">${escapeHtml(value)}</div>`;
 }
 

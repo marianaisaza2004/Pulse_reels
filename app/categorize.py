@@ -18,9 +18,11 @@ pipeline always receives the same shape, regardless of how the input arrived.
 Rules:
 - Extract only what is explicitly stated or directly, unambiguously implied by the input. \
 Never invent, assume, or guess a plausible-sounding value.
-- If a field is not covered by the input at all, output an empty string "" (for text \
-fields) or an empty array [] (for list fields). Do not fill gaps with generic placeholder \
-text like "not specified" — just leave it empty.
+- Every field in the schema is a plain string. For fields that naturally hold several \
+items (e.g. pain_points, words_to_use, main_competitors), separate each item with "; " \
+inside that single string — do not add numbering or bullet characters.
+- If a field is not covered by the input at all, output an empty string "". Do not fill \
+gaps with generic placeholder text like "not specified" — just leave it empty.
 - Keep values in the same language as the input (Spanish input -> Spanish output, English \
 input -> English output).
 - Be concise: each field should read like a usable brief entry, not a copy-paste of the \

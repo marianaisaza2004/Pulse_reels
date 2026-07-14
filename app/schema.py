@@ -30,8 +30,8 @@ CATEGORY_SCHEMA = {
                 "tone_of_voice": {"type": "string"},
                 "personality": {"type": "string"},
                 "communication_style": {"type": "string"},
-                "words_to_use": {"type": "array", "items": {"type": "string"}},
-                "words_to_avoid": {"type": "array", "items": {"type": "string"}},
+                "words_to_use": {"type": "string"},
+                "words_to_avoid": {"type": "string"},
             },
             "required": [
                 "tone_of_voice",
@@ -46,12 +46,12 @@ CATEGORY_SCHEMA = {
             "type": "object",
             "properties": {
                 "demographics": {"type": "string"},
-                "pain_points": {"type": "array", "items": {"type": "string"}},
-                "goals": {"type": "array", "items": {"type": "string"}},
-                "motivations": {"type": "array", "items": {"type": "string"}},
-                "buying_triggers": {"type": "array", "items": {"type": "string"}},
-                "objections": {"type": "array", "items": {"type": "string"}},
-                "interests": {"type": "array", "items": {"type": "string"}},
+                "pain_points": {"type": "string"},
+                "goals": {"type": "string"},
+                "motivations": {"type": "string"},
+                "buying_triggers": {"type": "string"},
+                "objections": {"type": "string"},
+                "interests": {"type": "string"},
             },
             "required": [
                 "demographics",
@@ -87,12 +87,12 @@ CATEGORY_SCHEMA = {
         "content_strategy": {
             "type": "object",
             "properties": {
-                "content_pillars": {"type": "array", "items": {"type": "string"}},
-                "preferred_formats": {"type": "array", "items": {"type": "string"}},
-                "platforms": {"type": "array", "items": {"type": "string"}},
+                "content_pillars": {"type": "string"},
+                "preferred_formats": {"type": "string"},
+                "platforms": {"type": "string"},
                 "posting_frequency": {"type": "string"},
-                "topics": {"type": "array", "items": {"type": "string"}},
-                "content_to_avoid": {"type": "array", "items": {"type": "string"}},
+                "topics": {"type": "string"},
+                "content_to_avoid": {"type": "string"},
             },
             "required": [
                 "content_pillars",
@@ -109,11 +109,11 @@ CATEGORY_SCHEMA = {
             "properties": {
                 "website": {"type": "string"},
                 "brand_guidelines": {"type": "string"},
-                "colors": {"type": "array", "items": {"type": "string"}},
+                "colors": {"type": "string"},
                 "logo": {"type": "string"},
                 "slogan": {"type": "string"},
-                "existing_captions": {"type": "array", "items": {"type": "string"}},
-                "best_performing_posts": {"type": "array", "items": {"type": "string"}},
+                "existing_captions": {"type": "string"},
+                "best_performing_posts": {"type": "string"},
             },
             "required": [
                 "website",
@@ -129,8 +129,8 @@ CATEGORY_SCHEMA = {
         "social_performance": {
             "type": "object",
             "properties": {
-                "best_posts": {"type": "array", "items": {"type": "string"}},
-                "worst_posts": {"type": "array", "items": {"type": "string"}},
+                "best_posts": {"type": "string"},
+                "worst_posts": {"type": "string"},
                 "viral_content": {"type": "string"},
                 "average_engagement": {"type": "string"},
             },
@@ -145,10 +145,10 @@ CATEGORY_SCHEMA = {
         "competitor_context": {
             "type": "object",
             "properties": {
-                "main_competitors": {"type": "array", "items": {"type": "string"}},
+                "main_competitors": {"type": "string"},
                 "market_positioning": {"type": "string"},
-                "opportunities": {"type": "array", "items": {"type": "string"}},
-                "trends": {"type": "array", "items": {"type": "string"}},
+                "opportunities": {"type": "string"},
+                "trends": {"type": "string"},
             },
             "required": [
                 "main_competitors",
@@ -164,10 +164,10 @@ CATEGORY_SCHEMA = {
             "properties": {
                 "legal_restrictions": {"type": "string"},
                 "mandatory_cta": {"type": "string"},
-                "forbidden_claims": {"type": "array", "items": {"type": "string"}},
-                "brand_rules": {"type": "array", "items": {"type": "string"}},
+                "forbidden_claims": {"type": "string"},
+                "brand_rules": {"type": "string"},
                 "maximum_duration": {"type": "string"},
-                "platform": {"type": "array", "items": {"type": "string"}},
+                "platform": {"type": "string"},
             },
             "required": [
                 "legal_restrictions",
