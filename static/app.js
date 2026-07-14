@@ -70,6 +70,7 @@ let momentUIMode = {};
 let currentScoreData = null;
 let teleprompterInterval = null;
 let teleprompterFontSize = 2.2;
+let teleprompterFinished = false;
 
 function setStatus(message, kind) {
   statusEl.textContent = message || "";
@@ -687,6 +688,7 @@ function openTeleprompter() {
         <button type="button" id="tp-font-minus" class="secondary">A-</button>
         <button type="button" id="tp-font-plus" class="secondary">A+</button>
         <input type="range" id="tp-speed" min="10" max="120" value="40" title="Velocidad de scroll" />
+        <button type="button" id="tp-restart-btn" class="secondary" style="display: none;">⟲ Reiniciar</button>
         <button type="button" id="tp-play-btn">▶ Reproducir</button>
       </div>
     </div>
@@ -696,11 +698,13 @@ function openTeleprompter() {
     </div>
   `;
   document.body.appendChild(overlay);
+  teleprompterFinished = false;
 
   document.getElementById("tp-exit-btn").addEventListener("click", closeTeleprompter);
   document.getElementById("tp-font-minus").addEventListener("click", () => adjustTeleprompterFont(-0.2));
   document.getElementById("tp-font-plus").addEventListener("click", () => adjustTeleprompterFont(0.2));
   document.getElementById("tp-play-btn").addEventListener("click", toggleTeleprompterScroll);
+  document.getElementById("tp-restart-btn").addEventListener("click", restartTeleprompterScroll);
 }
 
 function adjustTeleprompterFont(delta) {
@@ -711,6 +715,7 @@ function adjustTeleprompterFont(delta) {
 
 function toggleTeleprompterScroll() {
   const playBtn = document.getElementById("tp-play-btn");
+  const restartBtn = document.getElementById("tp-restart-btn");
   const content = document.getElementById("tp-content");
   const speedInput = document.getElementById("tp-speed");
 
@@ -718,19 +723,32 @@ function toggleTeleprompterScroll() {
     clearInterval(teleprompterInterval);
     teleprompterInterval = null;
     playBtn.textContent = "▶ Reproducir";
+    restartBtn.style.display = "none";
     return;
   }
 
+  if (teleprompterFinished) {
+    content.scrollTop = 0;
+    teleprompterFinished = false;
+  }
+
   playBtn.textContent = "⏸ Pausar";
+  restartBtn.style.display = "inline-block";
   teleprompterInterval = setInterval(() => {
     const pxPerSecond = Number(speedInput.value);
     content.scrollTop += pxPerSecond / 10;
     if (content.scrollTop + content.clientHeight >= content.scrollHeight) {
       clearInterval(teleprompterInterval);
       teleprompterInterval = null;
-      playBtn.textContent = "▶ Reproducir";
+      teleprompterFinished = true;
+      playBtn.textContent = "⟲ Reiniciar";
+      restartBtn.style.display = "none";
     }
   }, 100);
+}
+
+function restartTeleprompterScroll() {
+  document.getElementById("tp-content").scrollTop = 0;
 }
 
 function closeTeleprompter() {
