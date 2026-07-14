@@ -34,10 +34,33 @@ const GOALS = [
 
 const PLATFORMS = ["TikTok", "Instagram", "LinkedIn", "Other"];
 
+const CRITERIA_LABELS = {
+  clarity: "Claridad",
+  curiosity: "Curiosidad",
+  emotion: "Emoción",
+  shareability: "Shareability",
+  save_worthiness: "Save-worthiness",
+  conversation_potential: "Potencial de conversación",
+  simplicity: "Simplicidad (una sola idea)",
+  novelty: "Novedad",
+  authority: "Autoridad",
+  hook_strength: "Fuerza del hook",
+};
+
+const MOMENT_LABELS = [
+  ["hook", "Hook"],
+  ["beat_1", "Beat 1"],
+  ["beat_2", "Beat 2"],
+  ["beat_3", "Beat 3"],
+  ["beat_4", "Beat 4"],
+  ["cta", "CTA"],
+];
+
 let currentProfile = null;
 let currentLabels = null;
 let editingCategories = false;
 let currentEmail = null;
+let currentBrief = null;
 
 function setStatus(message, kind) {
   statusEl.textContent = message || "";
@@ -294,6 +317,7 @@ function renderCampaignBrief() {
 }
 
 function renderFinalSummary(brief) {
+  currentBrief = brief;
   resultsEl.innerHTML = "";
 
   const panel = document.createElement("div");
@@ -318,16 +342,148 @@ function renderFinalSummary(brief) {
     </div>
     <div class="actions-row">
       <button type="button" id="back-to-brief-btn" class="secondary">← Editar brief</button>
+      <button type="button" id="generate-script-btn">Generar guión →</button>
     </div>
+    <div id="generate-status" class="status"></div>
   `;
   resultsEl.appendChild(panel);
   document.getElementById("back-to-brief-btn").addEventListener("click", renderCampaignBrief);
+  document.getElementById("generate-script-btn").addEventListener("click", generateScript);
 
   const referenceHeading = document.createElement("p");
   referenceHeading.className = "status";
   referenceHeading.textContent = "Perfil de marca usado (referencia):";
   resultsEl.appendChild(referenceHeading);
   resultsEl.appendChild(buildCategoryGrid());
+}
+
+async function generateScript() {
+  const btn = document.getElementById("generate-script-btn");
+  const genStatus = document.getElementById("generate-status");
+  btn.disabled = true;
+  genStatus.textContent = "Evaluando el concepto y escribiendo el guión (puede tardar hasta 30-40 segundos)...";
+  genStatus.className = "status loading";
+
+  try {
+    const res = await fetch("/api/script", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        profile: currentProfile,
+        brief: {
+          goal_label: currentBrief.goal.label,
+          goal_description: currentBrief.goal.description,
+          platform: currentBrief.platform,
+          topic: currentBrief.topic,
+          duration: currentBrief.duration,
+        },
+      }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      genStatus.textContent = data.detail || "Ocurrió un error.";
+      genStatus.className = "status error";
+      btn.disabled = false;
+      return;
+    }
+
+    renderScriptResult(data);
+  } catch (err) {
+    genStatus.textContent = "No se pudo conectar con el servidor.";
+    genStatus.className = "status error";
+    btn.disabled = false;
+  }
+}
+
+function renderScoreGrid(scores, total, threshold) {
+  const panel = document.createElement("div");
+  panel.className = "panel";
+
+  const totalClass = total >= threshold ? "" : "error";
+  const rows = Object.entries(CRITERIA_LABELS)
+    .map(
+      ([key, label]) => `
+        <div class="field">
+          <div class="field-label">${escapeHtml(label)} — ${scores[key].score}/10</div>
+          <div class="field-value">${escapeHtml(scores[key].note)}</div>
+        </div>`
+    )
+    .join("");
+
+  panel.innerHTML = `
+    <h2>Viral Engine</h2>
+    <p class="status ${totalClass}" style="font-size: 1.1rem; font-weight: 600;">
+      Score total: ${total}/100 (mínimo para producir: ${threshold})
+    </p>
+    ${rows}
+  `;
+  return panel;
+}
+
+function renderScriptResult(data) {
+  resultsEl.innerHTML = "";
+  resultsEl.appendChild(renderScoreGrid(data.scores, data.total, data.threshold));
+
+  if (!data.produced) {
+    const panel = document.createElement("div");
+    panel.className = "panel";
+    panel.innerHTML = `
+      <p class="status error">
+        Este concepto no alcanzó el score mínimo para producir un guión. Ajusta el tema,
+        el objetivo o el ángulo en el brief usando las sugerencias de arriba, y vuelve a
+        intentar.
+      </p>
+      <div class="actions-row">
+        <button type="button" id="back-to-summary-btn" class="secondary">← Volver al resumen</button>
+      </div>
+    `;
+    resultsEl.appendChild(panel);
+    document
+      .getElementById("back-to-summary-btn")
+      .addEventListener("click", () => renderFinalSummary(currentBrief));
+    return;
+  }
+
+  const script = data.script;
+  const panel = document.createElement("div");
+  panel.className = "panel";
+
+  const moments = MOMENT_LABELS.filter(([key]) => {
+    const m = script[key];
+    return m.time || m.visual || m.script;
+  })
+    .map(
+      ([key, label]) => `
+        <div class="field">
+          <div class="field-label">${label} (${escapeHtml(script[key].time)})</div>
+          <div class="field-value"><em>${escapeHtml(script[key].visual)}</em></div>
+          <div class="field-value">"${escapeHtml(script[key].script)}"</div>
+        </div>`
+    )
+    .join("");
+
+  panel.innerHTML = `
+    <h2>Guión</h2>
+    ${moments}
+    <div class="field">
+      <div class="field-label">Pattern interrupts</div>
+      ${renderValue(script.pattern_interrupts)}
+    </div>
+    <div class="field">
+      <div class="field-label">Por qué funciona</div>
+      <div class="field-value">${escapeHtml(script.why_it_works)}</div>
+    </div>
+    <div class="actions-row">
+      <button type="button" id="back-to-summary-btn" class="secondary">← Volver al resumen</button>
+      <button type="button" id="regenerate-btn">Generar otra versión</button>
+    </div>
+  `;
+  resultsEl.appendChild(panel);
+  document
+    .getElementById("back-to-summary-btn")
+    .addEventListener("click", () => renderFinalSummary(currentBrief));
+  document.getElementById("regenerate-btn").addEventListener("click", generateScript);
 }
 
 form.addEventListener("submit", async (e) => {
