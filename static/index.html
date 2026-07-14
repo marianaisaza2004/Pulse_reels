@@ -10,10 +10,23 @@
   <div class="wrap">
     <header>
       <h1>Pulse — Brand Intake</h1>
-      <p>Sube o pega la información de la empresa. Sin importar el formato, se resume en las 10 categorías estándar.</p>
+      <p>Sube o pega la información de la empresa. Sin importar el formato, se resume en las 9 categorías estándar — y queda guardada bajo tu correo para la próxima vez.</p>
     </header>
 
-    <section class="panel">
+    <section class="panel" id="email-panel">
+      <div class="field">
+        <div class="field-label">Correo de la empresa</div>
+        <input type="text" id="email-input" placeholder="empresa@ejemplo.com" />
+      </div>
+      <div class="actions-row">
+        <button type="button" id="email-continue-btn">Continuar</button>
+        <button type="button" id="change-email-btn" class="secondary" style="display: none;">Cambiar correo</button>
+      </div>
+      <div id="email-status" class="status"></div>
+    </section>
+
+    <section class="panel" id="intake-section" style="display: none;">
+      <p id="intake-heading" class="status"></p>
       <form id="intake-form">
         <textarea id="text-input" placeholder="Pega aquí la información de la empresa (descripción, posts, brand guidelines, lo que tengas)..."></textarea>
         <div>

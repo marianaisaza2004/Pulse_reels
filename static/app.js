@@ -5,6 +5,13 @@ const submitBtn = document.getElementById("submit-btn");
 const statusEl = document.getElementById("status");
 const resultsEl = document.getElementById("results");
 
+const emailInput = document.getElementById("email-input");
+const emailContinueBtn = document.getElementById("email-continue-btn");
+const changeEmailBtn = document.getElementById("change-email-btn");
+const emailStatusEl = document.getElementById("email-status");
+const intakeSection = document.getElementById("intake-section");
+const intakeHeading = document.getElementById("intake-heading");
+
 const GOALS = [
   ["brand_awareness", "Increase Brand Awareness", "Make more people recognize your brand."],
   ["drive_sales", "Drive Sales", "Encourage people to purchase a product or service."],
@@ -30,10 +37,20 @@ const PLATFORMS = ["TikTok", "Instagram", "LinkedIn", "Other"];
 let currentProfile = null;
 let currentLabels = null;
 let editingCategories = false;
+let currentEmail = null;
 
 function setStatus(message, kind) {
   statusEl.textContent = message || "";
   statusEl.className = "status" + (kind ? " " + kind : "");
+}
+
+function setEmailStatus(message, kind) {
+  emailStatusEl.textContent = message || "";
+  emailStatusEl.className = "status" + (kind ? " " + kind : "");
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 function escapeHtml(str) {
@@ -117,6 +134,7 @@ function renderCategoryView() {
   actions.innerHTML = editingCategories
     ? `<button type="button" id="save-edits-btn">Guardar cambios</button>`
     : `<button type="button" id="edit-btn" class="secondary">Editar categorías</button>
+       <button type="button" id="add-info-btn" class="secondary">+ Agregar información</button>
        <button type="button" id="continue-btn">Continuar →</button>`;
   resultsEl.appendChild(actions);
 
@@ -127,11 +145,12 @@ function renderCategoryView() {
       editingCategories = true;
       renderCategoryView();
     });
+    document.getElementById("add-info-btn").addEventListener("click", showAddMoreInfoForm);
     document.getElementById("continue-btn").addEventListener("click", renderCampaignBrief);
   }
 }
 
-function saveEdits() {
+async function saveEdits() {
   document.querySelectorAll(".field-edit").forEach((el) => {
     const category = el.dataset.category;
     const field = el.dataset.field;
@@ -143,6 +162,29 @@ function saveEdits() {
   });
   editingCategories = false;
   renderCategoryView();
+
+  if (currentEmail) {
+    try {
+      await fetch("/api/profile/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: currentEmail, profile: currentProfile }),
+      });
+    } catch (err) {
+      // Edits still apply for this session even if the save call fails.
+    }
+  }
+}
+
+function showAddMoreInfoForm() {
+  intakeHeading.textContent =
+    "Agrega más información — se combinará con tu perfil actual, sin borrar lo que ya tienes.";
+  textInput.value = "";
+  fileInput.value = "";
+  setStatus("", "");
+  resultsEl.innerHTML = "";
+  intakeSection.style.display = "block";
+  intakeSection.scrollIntoView({ behavior: "smooth" });
 }
 
 function renderCampaignBrief() {
@@ -302,6 +344,7 @@ form.addEventListener("submit", async (e) => {
   const formData = new FormData();
   if (text) formData.append("text", text);
   if (file) formData.append("file", file);
+  if (currentEmail) formData.append("email", currentEmail);
 
   submitBtn.disabled = true;
   setStatus("Analizando...", "loading");
@@ -329,10 +372,75 @@ form.addEventListener("submit", async (e) => {
     currentProfile = data.profile;
     currentLabels = data.category_labels;
     editingCategories = false;
+    intakeSection.style.display = "none";
     renderCategoryView();
   } catch (err) {
     setStatus("No se pudo conectar con el servidor.", "error");
   } finally {
     submitBtn.disabled = false;
   }
+});
+
+emailContinueBtn.addEventListener("click", async () => {
+  const email = emailInput.value.trim();
+
+  if (!isValidEmail(email)) {
+    setEmailStatus("Escribe un correo válido.", "error");
+    return;
+  }
+
+  currentEmail = email;
+  emailContinueBtn.disabled = true;
+  emailInput.disabled = true;
+  setEmailStatus("Buscando perfil guardado...", "loading");
+
+  try {
+    const res = await fetch(`/api/profile?email=${encodeURIComponent(email)}`);
+
+    if (res.ok) {
+      const data = await res.json();
+      currentProfile = data.profile;
+      currentLabels = data.category_labels;
+      editingCategories = false;
+      setEmailStatus(`Perfil encontrado para ${email}.`, "");
+      intakeSection.style.display = "none";
+      renderCategoryView();
+    } else if (res.status === 404) {
+      setEmailStatus(`No hay perfil guardado para ${email} todavía — vamos a crear uno.`, "");
+      intakeHeading.textContent = `Nuevo perfil para ${email}`;
+      resultsEl.innerHTML = "";
+      intakeSection.style.display = "block";
+    } else {
+      const data = await res.json();
+      setEmailStatus(data.detail || "Ocurrió un error.", "error");
+      emailContinueBtn.disabled = false;
+      emailInput.disabled = false;
+      currentEmail = null;
+      return;
+    }
+
+    changeEmailBtn.style.display = "inline-block";
+  } catch (err) {
+    setEmailStatus("No se pudo conectar con el servidor.", "error");
+    emailContinueBtn.disabled = false;
+    emailInput.disabled = false;
+    currentEmail = null;
+  }
+});
+
+changeEmailBtn.addEventListener("click", () => {
+  currentEmail = null;
+  currentProfile = null;
+  currentLabels = null;
+  editingCategories = false;
+
+  emailInput.value = "";
+  emailInput.disabled = false;
+  emailContinueBtn.disabled = false;
+  changeEmailBtn.style.display = "none";
+  setEmailStatus("", "");
+
+  intakeSection.style.display = "none";
+  resultsEl.innerHTML = "";
+  setStatus("", "");
 });

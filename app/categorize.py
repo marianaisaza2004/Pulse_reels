@@ -2,6 +2,7 @@
 10-category brand profile, via a single constrained Claude call."""
 
 import json
+from typing import Optional
 
 from anthropic import Anthropic
 
@@ -28,25 +29,37 @@ input -> English output).
 - Be concise: each field should read like a usable brief entry, not a copy-paste of the \
 entire source paragraph."""
 
+UPDATE_SYSTEM_PROMPT = SYSTEM_PROMPT + """
+
+This company already has a saved profile from a previous session. You are given that \
+existing profile plus new material they just added. Return the full profile again, \
+updated: only change a field when the new material adds, corrects, or contradicts it — \
+carry every other field over unchanged from the existing profile instead of clearing it."""
+
 
 class CategorizationRefused(RuntimeError):
     pass
 
 
-def categorize(raw_text: str) -> dict:
+def categorize(raw_text: str, existing_profile: Optional[dict] = None) -> dict:
     client = Anthropic()
+
+    if existing_profile:
+        system = UPDATE_SYSTEM_PROMPT
+        user_content = (
+            f"Existing profile (JSON):\n{json.dumps(existing_profile, ensure_ascii=False)}\n\n"
+            f"New material to incorporate:\n\n{raw_text}"
+        )
+    else:
+        system = SYSTEM_PROMPT
+        user_content = f"Here is the raw company material to normalize:\n\n{raw_text}"
 
     response = client.messages.create(
         model=MODEL,
         max_tokens=8000,
         output_config={"effort": "medium", "format": {"type": "json_schema", "schema": CATEGORY_SCHEMA}},
-        system=SYSTEM_PROMPT,
-        messages=[
-            {
-                "role": "user",
-                "content": f"Here is the raw company material to normalize:\n\n{raw_text}",
-            }
-        ],
+        system=system,
+        messages=[{"role": "user", "content": user_content}],
     )
 
     if response.stop_reason == "refusal":
