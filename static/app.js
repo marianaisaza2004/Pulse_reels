@@ -170,6 +170,12 @@ function renderCampaignBrief() {
           (p) => `<button type="button" class="pill" data-platform="${p}">${p}</button>`
         ).join("")}
       </div>
+      <input
+        type="text"
+        id="platform-other-input"
+        placeholder="¿Cuál plataforma?"
+        style="display: none; margin-top: 8px;"
+      />
     </div>
 
     <div class="field">
@@ -191,6 +197,7 @@ function renderCampaignBrief() {
   resultsEl.appendChild(panel);
 
   let selectedPlatform = null;
+  const otherInput = document.getElementById("platform-other-input");
   document.querySelectorAll("#platform-group .pill").forEach((btn) => {
     btn.addEventListener("click", () => {
       document
@@ -198,6 +205,14 @@ function renderCampaignBrief() {
         .forEach((b) => b.classList.remove("selected"));
       btn.classList.add("selected");
       selectedPlatform = btn.dataset.platform;
+
+      if (selectedPlatform === "Other") {
+        otherInput.style.display = "block";
+        otherInput.focus();
+      } else {
+        otherInput.style.display = "none";
+        otherInput.value = "";
+      }
     });
   });
 
@@ -209,9 +224,15 @@ function renderCampaignBrief() {
     const goal = GOALS.find(([v]) => v === goalValue);
     const topic = document.getElementById("topic-input").value.trim();
     const duration = document.getElementById("duration-input").value.trim();
+    const customPlatform = otherInput.value.trim();
 
     if (!selectedPlatform) {
       briefStatus.textContent = "Selecciona una plataforma.";
+      briefStatus.className = "status error";
+      return;
+    }
+    if (selectedPlatform === "Other" && !customPlatform) {
+      briefStatus.textContent = "Escribe cuál plataforma.";
       briefStatus.className = "status error";
       return;
     }
@@ -223,7 +244,7 @@ function renderCampaignBrief() {
 
     renderFinalSummary({
       goal: { value: goal[0], label: goal[1], description: goal[2] },
-      platform: selectedPlatform,
+      platform: selectedPlatform === "Other" ? customPlatform : selectedPlatform,
       topic,
       duration,
     });
