@@ -178,6 +178,20 @@ CATEGORY_SCHEMA = {
             ],
             "additionalProperties": False,
         },
+        "founder_story": {
+            "type": "object",
+            "properties": {
+                "origin_story": {"type": "string"},
+                "founder_background": {"type": "string"},
+                "mission": {"type": "string"},
+            },
+            "required": [
+                "origin_story",
+                "founder_background",
+                "mission",
+            ],
+            "additionalProperties": False,
+        },
     },
     "required": [
         "business_identity",
@@ -189,6 +203,7 @@ CATEGORY_SCHEMA = {
         "social_performance",
         "competitor_context",
         "constraints",
+        "founder_story",
     ],
     "additionalProperties": False,
 }
@@ -204,4 +219,5 @@ CATEGORY_LABELS = [
     ("social_performance", "7. Social Performance"),
     ("competitor_context", "8. Competitor Context"),
     ("constraints", "9. Constraints"),
+    ("founder_story", "10. Founder & Origin Story"),
 ]
