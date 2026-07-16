@@ -24,8 +24,8 @@ items (e.g. pain_points, words_to_use, main_competitors), separate each item wit
 inside that single string — do not add numbering or bullet characters.
 - If a field is not covered by the input at all, output an empty string "". Do not fill \
 gaps with generic placeholder text like "not specified" — just leave it empty.
-- Keep values in the same language as the input (Spanish input -> Spanish output, English \
-input -> English output).
+- Always write every field in English, regardless of what language the source material is \
+in — translate as needed. Never leave a field in another language.
 - Be concise: each field should read like a usable brief entry, not a copy-paste of the \
 entire source paragraph."""
 
@@ -64,7 +64,7 @@ def categorize(raw_text: str, existing_profile: Optional[dict] = None) -> dict:
 
     if response.stop_reason == "refusal":
         raise CategorizationRefused(
-            "El modelo no pudo procesar este contenido. Revisa el texto e intenta de nuevo."
+            "The model couldn't process this content. Check the text and try again."
         )
 
     text_block = next(b for b in response.content if b.type == "text")

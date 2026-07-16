@@ -14,8 +14,10 @@ from app.schema import CATEGORY_LABELS
 from app.script_engine import (
     MIN_SCORE_TO_PRODUCE,
     MOMENT_KEYS,
+    VIRAL_CRITERIA,
     ScriptGenerationRefused,
     generate_script,
+    improve_criterion,
     refine_idea,
     revise_moment,
 )
@@ -42,8 +44,19 @@ def health():
 def _validate_email(email: str) -> str:
     email = email.strip()
     if "@" not in email or email.startswith("@") or email.endswith("@"):
-        raise HTTPException(status_code=400, detail="Correo inválido.")
+        raise HTTPException(status_code=400, detail="Invalid email.")
     return email
+
+
+def _account_payload(email: str, account: dict) -> dict:
+    brands = storage.list_brands(email)
+    return {
+        "brands": brands,
+        "category_labels": CATEGORY_LABELS,
+        "first_name": account["first_name"],
+        "last_name": account["last_name"],
+        "company_name": account["company_name"],
+    }
 
 
 @app.post("/api/auth/login")
@@ -51,27 +64,70 @@ def login_endpoint(payload: dict = Body(...)):
     email = _validate_email(payload.get("email", ""))
     password = payload.get("password", "")
     if not password:
-        raise HTTPException(status_code=400, detail="Escribe una contraseña.")
+        raise HTTPException(status_code=400, detail="Enter a password.")
 
-    stored_hash = storage.get_credentials(email)
+    account = storage.get_account(email)
 
-    if stored_hash is None:
-        # First time we see this email — create the account with this password.
-        storage.create_credentials(email, auth.hash_password(password))
-    elif not auth.verify_password(password, stored_hash):
-        raise HTTPException(status_code=401, detail="Contraseña incorrecta.")
+    if account is None:
+        raise HTTPException(status_code=404, detail="no_account")
+    if not auth.verify_password(password, account["password_hash"]):
+        raise HTTPException(status_code=401, detail="Incorrect password.")
 
-    profile = storage.get_profile(email)
-    return {"profile": profile, "category_labels": CATEGORY_LABELS}
+    return _account_payload(email, account)
 
 
-@app.post("/api/profile/save")
-def save_profile_endpoint(payload: dict = Body(...)):
+@app.post("/api/auth/signup")
+def signup_endpoint(payload: dict = Body(...)):
+    email = _validate_email(payload.get("email", ""))
+    password = payload.get("password", "")
+    confirm_password = payload.get("confirm_password", "")
+    first_name = (payload.get("first_name") or "").strip()
+    last_name = (payload.get("last_name") or "").strip()
+    company_name = (payload.get("company_name") or "").strip()
+
+    if not password:
+        raise HTTPException(status_code=400, detail="Enter a password.")
+    if password != confirm_password:
+        raise HTTPException(status_code=400, detail="Passwords don't match.")
+    if not first_name or not last_name:
+        raise HTTPException(status_code=400, detail="Enter your first and last name.")
+    if not company_name:
+        raise HTTPException(
+            status_code=400,
+            detail="Enter your company, brand, or username if you create content on your own.",
+        )
+
+    if storage.get_account(email) is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="An account with this email already exists — log in instead of creating a new one.",
+        )
+
+    storage.create_account(
+        email,
+        auth.hash_password(password),
+        first_name,
+        last_name,
+        company_name,
+    )
+
+    account = storage.get_account(email)
+    return _account_payload(email, account)
+
+
+@app.post("/api/brand/save")
+def save_brand_endpoint(payload: dict = Body(...)):
     email = _validate_email(payload.get("email", ""))
     profile = payload.get("profile")
+    brand_id = payload.get("brand_id")
     if not isinstance(profile, dict):
-        raise HTTPException(status_code=400, detail="Falta el perfil a guardar.")
-    storage.save_profile(email, profile)
+        raise HTTPException(status_code=400, detail="Missing the profile to save.")
+    if not isinstance(brand_id, int):
+        raise HTTPException(status_code=400, detail="Missing the brand id to save.")
+
+    updated = storage.update_brand(email, brand_id, profile)
+    if not updated:
+        raise HTTPException(status_code=404, detail="That brand doesn't exist on this account.")
     return {"ok": True}
 
 
@@ -84,7 +140,7 @@ async def categorize_endpoint(
     if not os.environ.get("ANTHROPIC_API_KEY"):
         raise HTTPException(
             status_code=500,
-            detail="Falta configurar ANTHROPIC_API_KEY en el servidor (ver .env.example).",
+            detail="ANTHROPIC_API_KEY is not configured on the server (see .env.example).",
         )
 
     parts: list[str] = []
@@ -106,22 +162,21 @@ async def categorize_endpoint(
     if not raw_text.strip():
         raise HTTPException(
             status_code=400,
-            detail="No se recibió información. Pega texto o sube un archivo.",
+            detail="No information was received. Paste text or upload a file.",
         )
 
     validated_email = _validate_email(email) if email else None
-    existing_profile = storage.get_profile(validated_email) if validated_email else None
 
     try:
-        profile = categorize(raw_text, existing_profile=existing_profile)
+        profile = categorize(raw_text, existing_profile=None)
     except CategorizationRefused as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-    if validated_email:
-        storage.save_profile(validated_email, profile)
+    brand_id = storage.create_brand(validated_email, profile) if validated_email else None
 
     return {
         "profile": profile,
+        "brand_id": brand_id,
         "category_labels": CATEGORY_LABELS,
         "meta": {
             "file_name": file_name,
@@ -135,13 +190,13 @@ def script_endpoint(payload: dict = Body(...)):
     if not os.environ.get("ANTHROPIC_API_KEY"):
         raise HTTPException(
             status_code=500,
-            detail="Falta configurar ANTHROPIC_API_KEY en el servidor (ver .env.example).",
+            detail="ANTHROPIC_API_KEY is not configured on the server (see .env.example).",
         )
 
     profile = payload.get("profile")
     brief = payload.get("brief")
     if not isinstance(profile, dict) or not isinstance(brief, dict):
-        raise HTTPException(status_code=400, detail="Falta el perfil o el brief de contenido.")
+        raise HTTPException(status_code=400, detail="Missing the brand profile or content brief.")
 
     try:
         refinement = refine_idea(profile, brief)
@@ -171,12 +226,46 @@ def script_endpoint(payload: dict = Body(...)):
     return result
 
 
+@app.post("/api/score/improve")
+def improve_score_endpoint(payload: dict = Body(...)):
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        raise HTTPException(
+            status_code=500,
+            detail="ANTHROPIC_API_KEY is not configured on the server (see .env.example).",
+        )
+
+    profile = payload.get("profile")
+    brief = payload.get("brief")
+    scores = payload.get("scores")
+    criterion = payload.get("criterion")
+    instruction = (payload.get("instruction") or "").strip()
+
+    if not isinstance(profile, dict) or not isinstance(brief, dict) or not isinstance(scores, dict):
+        raise HTTPException(status_code=400, detail="Missing the brand profile, brief, or current scores.")
+    if criterion not in VIRAL_CRITERIA:
+        raise HTTPException(status_code=400, detail="Invalid criterion.")
+
+    try:
+        result = improve_criterion(profile, brief, scores, criterion, instruction)
+    except ScriptGenerationRefused as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    return {
+        "scores": result["scores"],
+        "total": result["total"],
+        "threshold": MIN_SCORE_TO_PRODUCE,
+        "produced": result["produced"],
+        "final_topic": result["topic"],
+        "script": result.get("script"),
+    }
+
+
 @app.post("/api/script/revise")
 def revise_script_endpoint(payload: dict = Body(...)):
     if not os.environ.get("ANTHROPIC_API_KEY"):
         raise HTTPException(
             status_code=500,
-            detail="Falta configurar ANTHROPIC_API_KEY en el servidor (ver .env.example).",
+            detail="ANTHROPIC_API_KEY is not configured on the server (see .env.example).",
         )
 
     profile = payload.get("profile")
@@ -186,11 +275,11 @@ def revise_script_endpoint(payload: dict = Body(...)):
     instruction = (payload.get("instruction") or "").strip()
 
     if not isinstance(profile, dict) or not isinstance(brief, dict) or not isinstance(script, dict):
-        raise HTTPException(status_code=400, detail="Falta el perfil, el brief o el guión.")
+        raise HTTPException(status_code=400, detail="Missing the brand profile, brief, or script.")
     if moment_key not in MOMENT_KEYS:
-        raise HTTPException(status_code=400, detail="Parte del guión inválida.")
+        raise HTTPException(status_code=400, detail="Invalid script part.")
     if not instruction:
-        raise HTTPException(status_code=400, detail="Escribe qué quieres que cambie.")
+        raise HTTPException(status_code=400, detail="Write what you'd like to change.")
 
     try:
         moment = revise_moment(profile, brief, script, moment_key, instruction)

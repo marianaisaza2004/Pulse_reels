@@ -4,14 +4,100 @@ const fileInput = document.getElementById("file-input");
 const submitBtn = document.getElementById("submit-btn");
 const statusEl = document.getElementById("status");
 const resultsEl = document.getElementById("results");
-
-const emailInput = document.getElementById("email-input");
-const passwordInput = document.getElementById("password-input");
-const emailContinueBtn = document.getElementById("email-continue-btn");
-const changeEmailBtn = document.getElementById("change-email-btn");
-const emailStatusEl = document.getElementById("email-status");
 const intakeSection = document.getElementById("intake-section");
 const intakeHeading = document.getElementById("intake-heading");
+
+const loginScreen = document.getElementById("login-screen");
+const signupScreen = document.getElementById("signup-screen");
+const appScreen = document.getElementById("app-screen");
+const welcomeHeading = document.getElementById("welcome-heading");
+
+const loginEmailInput = document.getElementById("login-email-input");
+const loginPasswordInput = document.getElementById("login-password-input");
+const loginContinueBtn = document.getElementById("login-continue-btn");
+const loginStatusEl = document.getElementById("login-status");
+const loginNoAccountEl = document.getElementById("login-no-account");
+const goToSignupBtn = document.getElementById("go-to-signup-btn");
+
+const signupEmailInput = document.getElementById("signup-email-input");
+const signupPasswordInput = document.getElementById("signup-password-input");
+const signupConfirmPasswordInput = document.getElementById("signup-confirm-password-input");
+const signupFirstNameInput = document.getElementById("signup-first-name-input");
+const signupLastNameInput = document.getElementById("signup-last-name-input");
+const signupCompanyInput = document.getElementById("signup-company-input");
+const signupSubmitBtn = document.getElementById("signup-submit-btn");
+const backToLoginBtn = document.getElementById("back-to-login-btn");
+const signupStatusEl = document.getElementById("signup-status");
+
+const logoutBtn = document.getElementById("logout-btn");
+const collapseBrandBtn = document.getElementById("collapse-brand-btn");
+
+const FIELD_HELP = {
+  // business_identity
+  company_name: "Your company or brand name, exactly as you want it to appear.",
+  industry: "The industry your business is in (e.g. skincare, restaurants, software).",
+  products_services: "What products or services you sell, in a few words.",
+  business_model: "How you make money: direct sales, subscription, services, marketplace?",
+  value_proposition: "Why someone would choose your brand — the main benefit you offer.",
+  competitive_advantage: "What you do differently or better than the competition.",
+  // brand_personality
+  tone_of_voice: "Formal, casual, funny, technical? How the brand sounds when it speaks.",
+  personality: "Adjectives that describe the brand's personality (e.g. bold, warm, minimalist).",
+  communication_style: "How you communicate: direct, storytelling, educational, casual...",
+  words_to_use: "Words or phrases the brand actually uses.",
+  words_to_avoid: "Words or phrases the brand avoids using.",
+  // target_audience
+  demographics: "Age, gender, location, or other demographic details about your audience.",
+  pain_points: "The problems or frustrations your audience has.",
+  goals: "What your audience is trying to achieve.",
+  motivations: "What drives them to take action or make a purchase decision.",
+  buying_triggers: "What moment or situation makes them decide to buy.",
+  objections: "What doubts or reasons stop them from buying.",
+  interests: "Topics, hobbies, or interests related to your audience.",
+  // business_goals
+  brand_awareness: "How important it is for more people to recognize the brand.",
+  leads: "How important it is to capture potential customers (leads).",
+  sales: "How important it is to generate direct sales.",
+  community: "How important it is to build a loyal community or audience.",
+  education: "How important it is to educate the audience about the topic or product.",
+  retention: "How important it is to retain existing customers.",
+  // content_strategy
+  content_pillars: "The core topics you create content around on a recurring basis.",
+  preferred_formats: "Formats you prefer: reels, carousels, static posts, lives...",
+  platforms: "Which social platforms you post on or plan to post on.",
+  posting_frequency: "How often you publish content.",
+  topics: "Specific topics you typically cover in your content.",
+  content_to_avoid: "Topics or formats you'd rather NOT cover.",
+  // brand_assets
+  website: "The brand's website, if you have one.",
+  brand_guidelines: "Whether a brand guide exists, or visual/tone rules to follow.",
+  colors: "The brand's official colors.",
+  logo: "Description or reference for the brand's logo.",
+  slogan: "The slogan or tagline that represents the brand.",
+  existing_captions: "Examples of captions or copy you've used before.",
+  best_performing_posts: "Posts that have already worked well for you, and why.",
+  // social_performance
+  best_posts: "The best-performing posts you've had.",
+  worst_posts: "The posts that have performed worst.",
+  viral_content: "Any content that went viral, and why you think it happened.",
+  average_engagement: "How much engagement you typically get (likes, comments, shares).",
+  // competitor_context
+  main_competitors: "Who your main competitors are.",
+  market_positioning: "How you position yourself against those competitors.",
+  opportunities: "Opportunities you see in the market that no one covers well yet.",
+  trends: "Market or industry trends that are relevant right now.",
+  // constraints
+  legal_restrictions: "Legal or regulatory restrictions that apply to the content.",
+  mandatory_cta: "A call to action that must always be included.",
+  forbidden_claims: "Claims that can NOT be made (e.g. medical promises).",
+  brand_rules: "Specific brand rules the content must respect.",
+  maximum_duration: "Maximum allowed duration for videos/reels.",
+  platform: "The specific platform this restriction applies to, if any.",
+  // founder_story
+  origin_story: "Why they started the business, and the story behind it.",
+  founder_background: "Who's behind the brand — relevant experience or background.",
+  mission: "What they're trying to change or improve for customers, beyond just selling to them.",
+};
 
 const GOALS = [
   ["brand_awareness", "Increase Brand Awareness", "Make more people recognize your brand."],
@@ -36,21 +122,21 @@ const GOALS = [
 const PLATFORMS = ["TikTok", "Instagram", "LinkedIn", "Other"];
 
 const CRITERIA_LABELS = {
-  clarity: "Claridad",
-  curiosity: "Curiosidad",
-  emotion: "Emoción",
+  clarity: "Clarity",
+  curiosity: "Curiosity",
+  emotion: "Emotion",
   shareability: "Shareability",
   save_worthiness: "Save-worthiness",
-  conversation_potential: "Potencial de conversación",
-  simplicity: "Simplicidad (una sola idea)",
-  novelty: "Novedad",
-  authority: "Autoridad",
-  hook_strength: "Fuerza del hook",
+  conversation_potential: "Conversation Potential",
+  simplicity: "Simplicity (one idea only)",
+  novelty: "Novelty",
+  authority: "Authority",
+  hook_strength: "Hook Strength",
 };
 
 const VIRAL_ENGINE_DISCLAIMER =
-  "Pulse maximiza la probabilidad de alcance siguiendo principios de contenido de alto " +
-  "desempeño — no garantiza resultados virales.";
+  "Pulse maximizes reach potential by following high-performing content principles — " +
+  "it does not guarantee viral results.";
 
 const MOMENT_LABELS = [
   ["hook", "Hook"],
@@ -61,10 +147,15 @@ const MOMENT_LABELS = [
   ["cta", "CTA"],
 ];
 
+let currentBrands = [];
+let activeBrandId = null;
 let currentProfile = null;
 let currentLabels = null;
 let editingCategories = false;
+let categoriesCollapsed = false;
 let currentEmail = null;
+let currentFirstName = null;
+let currentCompanyName = null;
 let currentBrief = null;
 let currentScript = null;
 let momentUIMode = {};
@@ -78,9 +169,81 @@ function setStatus(message, kind) {
   statusEl.className = "status" + (kind ? " " + kind : "");
 }
 
-function setEmailStatus(message, kind) {
-  emailStatusEl.textContent = message || "";
-  emailStatusEl.className = "status" + (kind ? " " + kind : "");
+function setLoginStatus(message, kind) {
+  loginStatusEl.textContent = message || "";
+  loginStatusEl.className = "status" + (kind ? " " + kind : "");
+}
+
+function setSignupStatus(message, kind) {
+  signupStatusEl.textContent = message || "";
+  signupStatusEl.className = "status" + (kind ? " " + kind : "");
+}
+
+function setupPasswordToggle(inputId, btnId) {
+  const input = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
+  btn.addEventListener("click", () => {
+    const showing = input.type === "text";
+    input.type = showing ? "password" : "text";
+    btn.textContent = showing ? "Show" : "Hide";
+  });
+}
+
+setupPasswordToggle("login-password-input", "login-password-toggle");
+setupPasswordToggle("signup-password-input", "signup-password-toggle");
+setupPasswordToggle("signup-confirm-password-input", "signup-confirm-password-toggle");
+
+function showLoginScreen() {
+  loginScreen.style.display = "block";
+  signupScreen.style.display = "none";
+  appScreen.style.display = "none";
+}
+
+function showSignupScreen() {
+  loginScreen.style.display = "none";
+  signupScreen.style.display = "block";
+  appScreen.style.display = "none";
+}
+
+function showAppScreen() {
+  loginScreen.style.display = "none";
+  signupScreen.style.display = "none";
+  appScreen.style.display = "block";
+  welcomeHeading.textContent = `Welcome ${currentFirstName}!`;
+}
+
+function enterApp(email, data) {
+  currentEmail = email;
+  currentFirstName = data.first_name;
+  currentCompanyName = data.company_name;
+  currentBrands = data.brands || [];
+  currentLabels = data.category_labels;
+  activeBrandId = null;
+  currentProfile = null;
+  editingCategories = false;
+  categoriesCollapsed = true;
+  currentBrief = null;
+  resultsEl.innerHTML = "";
+  setStatus("", "");
+
+  showAppScreen();
+
+  if (currentBrands.length > 0) {
+    intakeSection.style.display = "none";
+    renderCategoryView();
+  } else {
+    showIntakeFormForNewBrand("Tell us about your brand to create your first profile.");
+  }
+}
+
+function showIntakeFormForNewBrand(heading) {
+  intakeHeading.textContent = heading;
+  textInput.value = "";
+  fileInput.value = "";
+  setStatus("", "");
+  resultsEl.innerHTML = "";
+  intakeSection.style.display = "block";
+  updateCollapseBrandBtnVisibility();
 }
 
 function isValidEmail(value) {
@@ -105,7 +268,7 @@ function labelize(key) {
 
 function renderValue(value) {
   if (!value || !String(value).trim()) {
-    return `<div class="field-value empty">— sin datos —</div>`;
+    return `<div class="field-value empty">— no data —</div>`;
   }
   if (value.includes("; ")) {
     const items = value
@@ -124,9 +287,15 @@ function renderFieldControl(categoryKey, fieldKey, value) {
     return renderValue(value);
   }
   const dataField = fieldKey || "";
-  return `<textarea class="field-edit" data-category="${categoryKey}" data-field="${dataField}" rows="2">${escapeHtml(
+  return `<textarea class="field-edit" data-category="${categoryKey}" data-field="${dataField}" data-original-value="${escapeHtml(
     value
-  )}</textarea>`;
+  )}" rows="2">${escapeHtml(value)}</textarea>`;
+}
+
+function renderHelpIcon(fieldKey) {
+  const help = FIELD_HELP[fieldKey];
+  if (!help) return "";
+  return `<span class="field-help" tabindex="0">?<span class="field-help-tooltip">${escapeHtml(help)}</span></span>`;
 }
 
 function buildCategoryGrid() {
@@ -137,6 +306,7 @@ function buildCategoryGrid() {
     const value = currentProfile[key];
     const card = document.createElement("div");
     card.className = "panel category-card";
+    card.id = `category-${key}`;
 
     if (typeof value === "string") {
       card.innerHTML = `<h2>${label}</h2>${renderFieldControl(key, null, value)}`;
@@ -145,7 +315,7 @@ function buildCategoryGrid() {
         .map(
           ([fieldKey, fieldValue]) => `
             <div class="field">
-              <div class="field-label">${labelize(fieldKey)}</div>
+              <div class="field-label">${labelize(fieldKey)} ${renderHelpIcon(fieldKey)}</div>
               ${renderFieldControl(key, fieldKey, fieldValue)}
             </div>`
         )
@@ -159,28 +329,186 @@ function buildCategoryGrid() {
   return grid;
 }
 
-function renderCategoryView() {
+function getIncompleteCategories() {
+  return currentLabels
+    .map(([key, label]) => {
+      const value = currentProfile[key];
+      let missingFields;
+      if (typeof value === "string") {
+        missingFields = value.trim() ? [] : ["information"];
+      } else {
+        missingFields = Object.entries(value)
+          .filter(([, fieldValue]) => !fieldValue || !String(fieldValue).trim())
+          .map(([fieldKey]) => labelize(fieldKey));
+      }
+      return { key, label, missingFields };
+    })
+    .filter((category) => category.missingFields.length > 0);
+}
+
+function buildIntroPanel() {
+  const panel = document.createElement("div");
+  panel.className = "panel";
+
+  const incomplete = getIncompleteCategories();
+  const missingListHtml = incomplete.length
+    ? `
+      <p class="field-label" style="margin-top: 14px;">You're missing information in these categories:</p>
+      <ul class="missing-categories-list">
+        ${incomplete
+          .map(
+            (category) =>
+              `<li><button type="button" class="missing-category-link" data-category="${category.key}">${category.label}</button></li>`
+          )
+          .join("")}
+      </ul>`
+    : `<p class="status" style="margin-top: 14px;">✓ All categories have information.</p>`;
+
+  panel.innerHTML = `
+    <h2>Your brand profile</h2>
+    <p class="intake-description">
+      This is what Pulse understood about your brand, organized into 10 standard categories
+      the AI uses to create content that's on-brand. Check that the information is correct —
+      you can edit any field or add more information at any time with the button below.
+    </p>
+    ${missingListHtml}
+  `;
+
+  panel.querySelectorAll(".missing-category-link").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      editingCategories = true;
+      renderCategoryView(btn.dataset.category);
+    });
+  });
+
+  return panel;
+}
+
+function renderIncompleteWarning(incomplete) {
+  const existing = document.getElementById("incomplete-warning");
+  if (existing) existing.remove();
+
+  const panel = document.createElement("div");
+  panel.id = "incomplete-warning";
+  panel.className = "panel";
+  panel.innerHTML = `
+    <p class="status error">
+      You're still missing information in: ${incomplete.map((category) => category.label).join(", ")}.
+    </p>
+    <p class="intake-description">
+      We recommend completing it so the content turns out better, but you can continue
+      anyway.
+    </p>
+    <div class="actions-row">
+      <button type="button" id="warning-back-btn" class="secondary">Go back and complete it</button>
+      <button type="button" id="warning-continue-btn">Continue anyway</button>
+    </div>
+  `;
+  resultsEl.appendChild(panel);
+  panel.scrollIntoView({ behavior: "smooth", block: "center" });
+
+  document.getElementById("warning-back-btn").addEventListener("click", () => panel.remove());
+  document.getElementById("warning-continue-btn").addEventListener("click", renderCampaignBrief);
+}
+
+function goToBriefWithIncompleteCheck() {
+  const incomplete = getIncompleteCategories();
+  if (incomplete.length) {
+    renderIncompleteWarning(incomplete);
+    return;
+  }
+  renderCampaignBrief();
+}
+
+function updateCollapseBrandBtnVisibility() {
+  const showing = activeBrandId !== null && (editingCategories || !categoriesCollapsed);
+  collapseBrandBtn.style.display = showing ? "" : "none";
+}
+
+function getBrandName(profile) {
+  return (profile.business_identity && profile.business_identity.company_name) || "Unnamed brand";
+}
+
+function openBrand(brandId) {
+  const brand = currentBrands.find((b) => b.id === brandId);
+  if (!brand) return;
+  activeBrandId = brand.id;
+  currentProfile = brand.profile;
+  categoriesCollapsed = false;
+  editingCategories = false;
+  renderCategoryView();
+}
+
+function renderBrandsOverview() {
+  updateCollapseBrandBtnVisibility();
   resultsEl.innerHTML = "";
+
+  const list = document.createElement("div");
+  list.className = "grid";
+  currentBrands.forEach((brand) => {
+    const box = document.createElement("div");
+    box.className = "panel brand-collapsed-box";
+    box.innerHTML = `
+      <h2>${escapeHtml(getBrandName(brand.profile))}</h2>
+      <p class="intake-description">Click to view or edit this brand's profile.</p>
+    `;
+    box.addEventListener("click", () => openBrand(brand.id));
+    list.appendChild(box);
+  });
+  resultsEl.appendChild(list);
+
+  const addPanel = document.createElement("div");
+  addPanel.className = "panel actions-row";
+  addPanel.innerHTML = `<button type="button" id="add-brand-btn">+ Add another brand</button>`;
+  resultsEl.appendChild(addPanel);
+
+  document.getElementById("add-brand-btn").addEventListener("click", () => {
+    showIntakeFormForNewBrand("Tell us about this new brand.");
+  });
+}
+
+function renderCategoryView(scrollToCategory) {
+  if (!editingCategories && categoriesCollapsed && !scrollToCategory) {
+    renderBrandsOverview();
+    return;
+  }
+
+  updateCollapseBrandBtnVisibility();
+  resultsEl.innerHTML = "";
+  resultsEl.appendChild(buildIntroPanel());
   resultsEl.appendChild(buildCategoryGrid());
 
   const actions = document.createElement("div");
   actions.className = "panel actions-row";
   actions.innerHTML = editingCategories
-    ? `<button type="button" id="save-edits-btn">Guardar cambios</button>`
-    : `<button type="button" id="edit-btn" class="secondary">Editar categorías</button>
-       <button type="button" id="add-info-btn" class="secondary">+ Agregar información</button>
-       <button type="button" id="continue-btn">Continuar →</button>`;
+    ? `<button type="button" id="save-edits-btn" style="display: none;">Save changes</button>
+       <button type="button" id="continue-btn">Continue →</button>`
+    : `<button type="button" id="edit-btn" class="secondary">Add information</button>
+       <button type="button" id="continue-btn">Continue →</button>`;
   resultsEl.appendChild(actions);
 
+  document.getElementById("continue-btn").addEventListener("click", goToBriefWithIncompleteCheck);
+
   if (editingCategories) {
-    document.getElementById("save-edits-btn").addEventListener("click", saveEdits);
+    const saveBtn = document.getElementById("save-edits-btn");
+    saveBtn.addEventListener("click", saveEdits);
+    resultsEl.querySelectorAll(".field-edit").forEach((el) => {
+      el.addEventListener("input", () => {
+        if (el.value !== el.dataset.originalValue) {
+          saveBtn.style.display = "";
+        }
+      });
+    });
   } else {
     document.getElementById("edit-btn").addEventListener("click", () => {
       editingCategories = true;
       renderCategoryView();
     });
-    document.getElementById("add-info-btn").addEventListener("click", showAddMoreInfoForm);
-    document.getElementById("continue-btn").addEventListener("click", renderCampaignBrief);
+  }
+
+  if (scrollToCategory) {
+    const card = document.getElementById(`category-${scrollToCategory}`);
+    if (card) card.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }
 
@@ -195,30 +523,20 @@ async function saveEdits() {
     }
   });
   editingCategories = false;
+  categoriesCollapsed = true;
   renderCategoryView();
 
-  if (currentEmail) {
+  if (currentEmail && activeBrandId !== null) {
     try {
-      await fetch("/api/profile/save", {
+      await fetch("/api/brand/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: currentEmail, profile: currentProfile }),
+        body: JSON.stringify({ email: currentEmail, brand_id: activeBrandId, profile: currentProfile }),
       });
     } catch (err) {
       // Edits still apply for this session even if the save call fails.
     }
   }
-}
-
-function showAddMoreInfoForm() {
-  intakeHeading.textContent =
-    "Agrega más información — se combinará con tu perfil actual, sin borrar lo que ya tienes.";
-  textInput.value = "";
-  fileInput.value = "";
-  setStatus("", "");
-  resultsEl.innerHTML = "";
-  intakeSection.style.display = "block";
-  intakeSection.scrollIntoView({ behavior: "smooth" });
 }
 
 function renderCampaignBrief() {
@@ -227,10 +545,10 @@ function renderCampaignBrief() {
   const panel = document.createElement("div");
   panel.className = "panel";
   panel.innerHTML = `
-    <h2>Brief de este contenido</h2>
+    <h2>Content brief</h2>
 
     <div class="field">
-      <div class="field-label">¿Para qué es este contenido?</div>
+      <div class="field-label">What is this content for?</div>
       <select id="goal-select">
         ${GOALS.map(
           ([value, title, desc]) =>
@@ -240,7 +558,7 @@ function renderCampaignBrief() {
     </div>
 
     <div class="field">
-      <div class="field-label">Plataforma</div>
+      <div class="field-label">Platform</div>
       <div class="pill-group" id="platform-group">
         ${PLATFORMS.map(
           (p) => `<button type="button" class="pill" data-platform="${p}">${p}</button>`
@@ -249,24 +567,24 @@ function renderCampaignBrief() {
       <input
         type="text"
         id="platform-other-input"
-        placeholder="¿Cuál plataforma?"
+        placeholder="Which platform?"
         style="display: none; margin-top: 8px;"
       />
     </div>
 
     <div class="field">
-      <div class="field-label">¿De qué trata este contenido en específico?</div>
-      <textarea id="topic-input" rows="3" placeholder="Ej: Un reel mostrando 3 errores comunes al usar retinol..."></textarea>
+      <div class="field-label">What is this piece of content specifically about?</div>
+      <textarea id="topic-input" rows="3" placeholder="E.g. A reel showing 3 common mistakes when using retinol..."></textarea>
     </div>
 
     <div class="field">
-      <div class="field-label">Duración preferida (opcional)</div>
-      <input type="text" id="duration-input" placeholder="Ej: 30 segundos — déjalo vacío si no tienes preferencia" />
+      <div class="field-label">Preferred duration (optional)</div>
+      <input type="text" id="duration-input" placeholder="E.g. 30 seconds — leave blank if you have no preference" />
     </div>
 
     <div class="actions-row">
-      <button type="button" id="brief-back-btn" class="secondary">← Volver a categorías</button>
-      <button type="button" id="brief-submit-btn">Ver resumen</button>
+      <button type="button" id="brief-back-btn" class="secondary">← Back to categories</button>
+      <button type="button" id="brief-submit-btn">See summary</button>
     </div>
     <div id="brief-status" class="status"></div>
   `;
@@ -303,17 +621,17 @@ function renderCampaignBrief() {
     const customPlatform = otherInput.value.trim();
 
     if (!selectedPlatform) {
-      briefStatus.textContent = "Selecciona una plataforma.";
+      briefStatus.textContent = "Select a platform.";
       briefStatus.className = "status error";
       return;
     }
     if (selectedPlatform === "Other" && !customPlatform) {
-      briefStatus.textContent = "Escribe cuál plataforma.";
+      briefStatus.textContent = "Enter which platform.";
       briefStatus.className = "status error";
       return;
     }
     if (!topic) {
-      briefStatus.textContent = "Cuéntanos brevemente de qué trata el contenido.";
+      briefStatus.textContent = "Tell us briefly what this content is about.";
       briefStatus.className = "status error";
       return;
     }
@@ -334,26 +652,26 @@ function renderFinalSummary(brief) {
   const panel = document.createElement("div");
   panel.className = "panel";
   panel.innerHTML = `
-    <h2>Resumen del brief</h2>
+    <h2>Brief summary</h2>
     <div class="field">
-      <div class="field-label">Objetivo</div>
+      <div class="field-label">Goal</div>
       <div class="field-value">${escapeHtml(brief.goal.label)}</div>
     </div>
     <div class="field">
-      <div class="field-label">Plataforma</div>
+      <div class="field-label">Platform</div>
       <div class="field-value">${escapeHtml(brief.platform)}</div>
     </div>
     <div class="field">
-      <div class="field-label">Tema</div>
+      <div class="field-label">Topic</div>
       <div class="field-value">${escapeHtml(brief.topic)}</div>
     </div>
     <div class="field">
-      <div class="field-label">Duración preferida</div>
+      <div class="field-label">Preferred duration</div>
       ${renderValue(brief.duration)}
     </div>
     <div class="actions-row">
-      <button type="button" id="back-to-brief-btn" class="secondary">← Editar brief</button>
-      <button type="button" id="generate-script-btn">Evaluar idea →</button>
+      <button type="button" id="back-to-brief-btn" class="secondary">← Edit brief</button>
+      <button type="button" id="generate-script-btn">Evaluate idea →</button>
     </div>
     <div id="generate-status" class="status"></div>
   `;
@@ -363,7 +681,7 @@ function renderFinalSummary(brief) {
 
   const referenceHeading = document.createElement("p");
   referenceHeading.className = "status";
-  referenceHeading.textContent = "Perfil de marca usado (referencia):";
+  referenceHeading.textContent = "Brand profile used (reference):";
   resultsEl.appendChild(referenceHeading);
   resultsEl.appendChild(buildCategoryGrid());
 }
@@ -383,9 +701,9 @@ async function generateScript() {
   const genStatus = document.getElementById("generate-status");
   btn.disabled = true;
   genStatus.textContent =
-    "Evaluando la idea contra el Viral Engine — si el score no es suficiente, la " +
-    "va a mejorar y reevaluar sola antes de escribir el guión (puede tardar hasta " +
-    "60 segundos)...";
+    "Evaluating the idea against the Viral Engine — if the score isn't good enough, it'll " +
+    "sharpen and re-score it on its own before writing the script (this can take up to " +
+    "60 seconds)...";
   genStatus.className = "status loading";
 
   try {
@@ -397,7 +715,7 @@ async function generateScript() {
     const data = await res.json();
 
     if (!res.ok) {
-      genStatus.textContent = data.detail || "Ocurrió un error.";
+      genStatus.textContent = data.detail || "Something went wrong.";
       genStatus.className = "status error";
       btn.disabled = false;
       return;
@@ -421,7 +739,7 @@ async function generateScript() {
     momentUIMode = {};
     renderScriptView();
   } catch (err) {
-    genStatus.textContent = "No se pudo conectar con el servidor.";
+    genStatus.textContent = "Couldn't connect to the server.";
     genStatus.className = "status error";
     btn.disabled = false;
   }
@@ -439,12 +757,12 @@ function buildMomentBlock(key, label) {
     return `
       <div class="field moment-block" data-moment="${key}">
         <div class="field-label">${label}</div>
-        <input type="text" class="moment-time-input" placeholder="Tiempo, ej. 0:00-0:03" value="${escapeHtml(m.time)}" />
-        <textarea class="moment-visual-input" rows="2" placeholder="Dirección visual">${escapeHtml(m.visual)}</textarea>
-        <textarea class="moment-script-input" rows="2" placeholder="Texto a decir en cámara">${escapeHtml(m.script)}</textarea>
+        <input type="text" class="moment-time-input" placeholder="Time, e.g. 0:00-0:03" value="${escapeHtml(m.time)}" />
+        <textarea class="moment-visual-input" rows="2" placeholder="Visual direction">${escapeHtml(m.visual)}</textarea>
+        <textarea class="moment-script-input" rows="2" placeholder="What to say on camera">${escapeHtml(m.script)}</textarea>
         <div class="actions-row">
-          <button type="button" class="moment-save-btn">Guardar</button>
-          <button type="button" class="moment-cancel-btn secondary">Cancelar</button>
+          <button type="button" class="moment-save-btn">Save</button>
+          <button type="button" class="moment-cancel-btn secondary">Cancel</button>
         </div>
       </div>`;
   }
@@ -455,10 +773,10 @@ function buildMomentBlock(key, label) {
         <div class="field-label">${label} (${escapeHtml(m.time)})</div>
         <div class="field-value"><em>${escapeHtml(m.visual)}</em></div>
         <div class="field-value">"${escapeHtml(m.script)}"</div>
-        <textarea class="moment-instruction-input" rows="2" placeholder='Ej: "Hazlo más gracioso", "empieza con una pregunta", "que sea más corto"...'></textarea>
+        <textarea class="moment-instruction-input" rows="2" placeholder='E.g. "Make it funnier", "start with a question", "make it shorter"...'></textarea>
         <div class="actions-row">
-          <button type="button" class="moment-ai-submit-btn">Pedir ajuste a la IA</button>
-          <button type="button" class="moment-cancel-btn secondary">Cancelar</button>
+          <button type="button" class="moment-ai-submit-btn">Ask AI to adjust</button>
+          <button type="button" class="moment-cancel-btn secondary">Cancel</button>
         </div>
         <div class="status moment-ai-status"></div>
       </div>`;
@@ -470,8 +788,8 @@ function buildMomentBlock(key, label) {
       <div class="field-value"><em>${escapeHtml(m.visual)}</em></div>
       <div class="field-value">"${escapeHtml(m.script)}"</div>
       <div class="actions-row">
-        <button type="button" class="moment-edit-btn secondary">Editar manualmente</button>
-        <button type="button" class="moment-ai-btn secondary">Pedir ajuste a la IA</button>
+        <button type="button" class="moment-edit-btn secondary">Edit manually</button>
+        <button type="button" class="moment-ai-btn secondary">Ask AI to adjust</button>
       </div>
     </div>`;
 }
@@ -485,9 +803,18 @@ function renderScoreGrid(scores, total, threshold, refinement) {
     .map(([key, label]) => {
       const weak = scores[key].score < 7 ? " weak-score" : "";
       return `
-        <div class="field">
+        <div class="field" data-criterion="${key}">
           <div class="field-label">${escapeHtml(label)} — <span class="${weak}">${scores[key].score}/10</span></div>
           <div class="field-value">${escapeHtml(scores[key].note)}</div>
+          <button type="button" class="score-improve-btn secondary">Improve</button>
+          <div class="score-improve-form" style="display: none;">
+            <textarea class="score-improve-instruction" rows="2" placeholder="What would you like to focus on? (optional)"></textarea>
+            <div class="actions-row">
+              <button type="button" class="score-improve-submit-btn">Apply</button>
+              <button type="button" class="score-improve-cancel-btn secondary">Cancel</button>
+            </div>
+            <div class="status score-improve-status"></div>
+          </div>
         </div>`;
     })
     .join("");
@@ -495,7 +822,7 @@ function renderScoreGrid(scores, total, threshold, refinement) {
   const refinementNote =
     refinement && refinement.roundsTried > 1 && refinement.finalTopic !== refinement.originalTopic
       ? `<div class="field">
-           <div class="field-label">Ángulo optimizado automáticamente (${refinement.roundsTried} intentos)</div>
+           <div class="field-label">Angle automatically optimized (${refinement.roundsTried} attempts)</div>
            <div class="field-value">${escapeHtml(refinement.finalTopic)}</div>
          </div>`
       : "";
@@ -503,13 +830,92 @@ function renderScoreGrid(scores, total, threshold, refinement) {
   panel.innerHTML = `
     <h2>Viral Engine</h2>
     <p class="status ${passed ? "" : "error"}" style="font-size: 1.1rem; font-weight: 700;">
-      Score: ${total}/100 (mínimo para generar guión: ${threshold})
+      Score: ${total}/100 (minimum to generate script: ${threshold})
     </p>
     <p class="intake-description">${VIRAL_ENGINE_DISCLAIMER}</p>
     ${refinementNote}
     ${rows}
   `;
+
+  panel.querySelectorAll(".field[data-criterion]").forEach((field) => {
+    const criterion = field.dataset.criterion;
+    const form = field.querySelector(".score-improve-form");
+    const improveBtn = field.querySelector(".score-improve-btn");
+    const submitBtn = field.querySelector(".score-improve-submit-btn");
+    const cancelBtn = field.querySelector(".score-improve-cancel-btn");
+    const instructionInput = field.querySelector(".score-improve-instruction");
+    const statusEl = field.querySelector(".score-improve-status");
+
+    improveBtn.addEventListener("click", () => {
+      panel.querySelectorAll(".score-improve-form").forEach((f) => (f.style.display = "none"));
+      form.style.display = "";
+      instructionInput.focus();
+    });
+
+    cancelBtn.addEventListener("click", () => {
+      form.style.display = "none";
+      statusEl.textContent = "";
+      instructionInput.value = "";
+    });
+
+    submitBtn.addEventListener("click", () => {
+      requestScoreImprove(criterion, instructionInput.value.trim(), submitBtn, statusEl);
+    });
+  });
+
   return panel;
+}
+
+async function requestScoreImprove(criterion, instruction, submitBtn, statusEl) {
+  submitBtn.disabled = true;
+  statusEl.textContent = "Sharpening this idea and re-scoring...";
+  statusEl.className = "status loading score-improve-status";
+
+  try {
+    const res = await fetch("/api/score/improve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        profile: currentProfile,
+        brief: briefPayload(),
+        scores: currentScoreData.scores,
+        criterion,
+        instruction,
+      }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      statusEl.textContent = data.detail || "Something went wrong.";
+      statusEl.className = "status error score-improve-status";
+      submitBtn.disabled = false;
+      return;
+    }
+
+    const newRoundsTried = (currentScoreData.roundsTried || 1) + 1;
+    currentBrief.topic = data.final_topic;
+    currentScoreData = {
+      scores: data.scores,
+      total: data.total,
+      threshold: data.threshold,
+      finalTopic: data.final_topic,
+      roundsTried: newRoundsTried,
+      originalTopic: currentScoreData.originalTopic,
+    };
+
+    if (data.produced && data.script) {
+      currentScript = data.script;
+      momentUIMode = {};
+      renderScriptView();
+    } else {
+      data.rounds_tried = newRoundsTried;
+      renderScoreGate(data);
+    }
+  } catch (err) {
+    statusEl.textContent = "Couldn't connect to the server.";
+    statusEl.className = "status error score-improve-status";
+    submitBtn.disabled = false;
+  }
 }
 
 function renderScoreGate(data) {
@@ -529,19 +935,19 @@ function renderScoreGate(data) {
   panel.className = "panel";
   const triedMsg =
     data.rounds_tried > 1
-      ? `Ya intentamos mejorarla automáticamente ${data.rounds_tried} veces, pero no alcanzó el score mínimo.`
-      : "Esta idea no alcanzó el score mínimo para generar el guión todavía.";
+      ? `We already tried improving it automatically ${data.rounds_tried} times, but it didn't reach the minimum score.`
+      : "This idea hasn't reached the minimum score to generate the script yet.";
   panel.innerHTML = `
     <p class="status error">
       ${triedMsg}
     </p>
     <div class="field">
-      <div class="field-label">Ángulo más fuerte sugerido para la misma idea</div>
+      <div class="field-label">Stronger angle suggested for the same idea</div>
       <div class="field-value">${escapeHtml(data.scores.stronger_angle)}</div>
     </div>
     <div class="actions-row">
-      <button type="button" id="back-to-summary-btn" class="secondary">← Volver al resumen</button>
-      <button type="button" id="use-suggested-angle-btn">Usar este ángulo y reintentar</button>
+      <button type="button" id="back-to-summary-btn" class="secondary">← Back to summary</button>
+      <button type="button" id="use-suggested-angle-btn">Use this angle and retry</button>
     </div>
   `;
   resultsEl.appendChild(panel);
@@ -556,75 +962,26 @@ function renderScoreGate(data) {
   });
 }
 
-function buildMomentBlock(key, label) {
-  const m = currentScript[key];
-  const mode = momentUIMode[key] || "view";
-
-  if (mode !== "edit" && !m.time && !m.visual && !m.script) {
-    return "";
-  }
-
-  if (mode === "edit") {
-    return `
-      <div class="field moment-block" data-moment="${key}">
-        <div class="field-label">${label}</div>
-        <input type="text" class="moment-time-input" placeholder="Tiempo, ej. 0:00-0:03" value="${escapeHtml(m.time)}" />
-        <textarea class="moment-visual-input" rows="2" placeholder="Dirección visual">${escapeHtml(m.visual)}</textarea>
-        <textarea class="moment-script-input" rows="2" placeholder="Texto a decir en cámara">${escapeHtml(m.script)}</textarea>
-        <div class="actions-row">
-          <button type="button" class="moment-save-btn">Guardar</button>
-          <button type="button" class="moment-cancel-btn secondary">Cancelar</button>
-        </div>
-      </div>`;
-  }
-
-  if (mode === "ai-fix") {
-    return `
-      <div class="field moment-block" data-moment="${key}">
-        <div class="field-label">${label} (${escapeHtml(m.time)})</div>
-        <div class="field-value"><em>${escapeHtml(m.visual)}</em></div>
-        <div class="field-value">"${escapeHtml(m.script)}"</div>
-        <textarea class="moment-instruction-input" rows="2" placeholder='Ej: "Hazlo más gracioso", "empieza con una pregunta", "que sea más corto"...'></textarea>
-        <div class="actions-row">
-          <button type="button" class="moment-ai-submit-btn">Pedir ajuste a la IA</button>
-          <button type="button" class="moment-cancel-btn secondary">Cancelar</button>
-        </div>
-        <div class="status moment-ai-status"></div>
-      </div>`;
-  }
-
-  return `
-    <div class="field moment-block" data-moment="${key}">
-      <div class="field-label">${label} (${escapeHtml(m.time)})</div>
-      <div class="field-value"><em>${escapeHtml(m.visual)}</em></div>
-      <div class="field-value">"${escapeHtml(m.script)}"</div>
-      <div class="actions-row">
-        <button type="button" class="moment-edit-btn secondary">Editar manualmente</button>
-        <button type="button" class="moment-ai-btn secondary">Pedir ajuste a la IA</button>
-      </div>
-    </div>`;
-}
-
 function buildScriptPanelElement() {
   const panel = document.createElement("div");
   panel.className = "panel";
   const moments = MOMENT_LABELS.map(([key, label]) => buildMomentBlock(key, label)).join("");
 
   panel.innerHTML = `
-    <h2>Guión</h2>
+    <h2>Script</h2>
     ${moments}
     <div class="field">
       <div class="field-label">Pattern interrupts</div>
       ${renderValue(currentScript.pattern_interrupts)}
     </div>
     <div class="field">
-      <div class="field-label">Por qué funciona</div>
+      <div class="field-label">Why it works</div>
       <div class="field-value">${escapeHtml(currentScript.why_it_works)}</div>
     </div>
     <div class="actions-row">
-      <button type="button" id="back-to-summary-btn" class="secondary">← Volver al resumen</button>
-      <button type="button" id="regenerate-btn">Generar otra versión</button>
-      <button type="button" id="teleprompter-btn" class="secondary">🎥 Grabar (Teleprompter)</button>
+      <button type="button" id="back-to-summary-btn" class="secondary">← Back to summary</button>
+      <button type="button" id="regenerate-btn">Generate another version</button>
+      <button type="button" id="teleprompter-btn" class="secondary">🎥 Record (Teleprompter)</button>
     </div>
   `;
 
@@ -684,13 +1041,13 @@ function openTeleprompter() {
   overlay.id = "teleprompter-overlay";
   overlay.innerHTML = `
     <div class="tp-controls">
-      <button type="button" id="tp-exit-btn" class="secondary">✕ Salir</button>
+      <button type="button" id="tp-exit-btn" class="secondary">✕ Exit</button>
       <div class="tp-controls-right">
         <button type="button" id="tp-font-minus" class="secondary">A-</button>
         <button type="button" id="tp-font-plus" class="secondary">A+</button>
-        <input type="range" id="tp-speed" min="10" max="120" value="40" title="Velocidad de scroll" />
-        <button type="button" id="tp-restart-btn" class="secondary" style="display: none;">⟲ Reiniciar</button>
-        <button type="button" id="tp-play-btn">▶ Reproducir</button>
+        <input type="range" id="tp-speed" min="10" max="120" value="40" title="Scroll speed" />
+        <button type="button" id="tp-restart-btn" class="secondary" style="display: none;">⟲ Restart</button>
+        <button type="button" id="tp-play-btn">▶ Play</button>
       </div>
     </div>
     <div class="tp-content" id="tp-content" style="font-size: ${teleprompterFontSize}rem;">
@@ -723,7 +1080,7 @@ function toggleTeleprompterScroll() {
   if (teleprompterInterval) {
     clearInterval(teleprompterInterval);
     teleprompterInterval = null;
-    playBtn.textContent = "▶ Reproducir";
+    playBtn.textContent = "▶ Play";
     restartBtn.style.display = "none";
     return;
   }
@@ -733,7 +1090,7 @@ function toggleTeleprompterScroll() {
     teleprompterFinished = false;
   }
 
-  playBtn.textContent = "⏸ Pausar";
+  playBtn.textContent = "⏸ Pause";
   restartBtn.style.display = "inline-block";
   teleprompterInterval = setInterval(() => {
     const pxPerSecond = Number(speedInput.value);
@@ -742,7 +1099,7 @@ function toggleTeleprompterScroll() {
       clearInterval(teleprompterInterval);
       teleprompterInterval = null;
       teleprompterFinished = true;
-      playBtn.textContent = "⟲ Reiniciar";
+      playBtn.textContent = "⟲ Restart";
       restartBtn.style.display = "none";
     }
   }, 100);
@@ -781,12 +1138,12 @@ async function requestMomentFix(key) {
   const aiStatus = block.querySelector(".moment-ai-status");
 
   if (!instruction) {
-    aiStatus.textContent = "Escribe qué quieres que cambie.";
+    aiStatus.textContent = "Write what you'd like to change.";
     aiStatus.className = "status error moment-ai-status";
     return;
   }
 
-  aiStatus.textContent = "Ajustando...";
+  aiStatus.textContent = "Adjusting...";
   aiStatus.className = "status loading moment-ai-status";
 
   try {
@@ -804,7 +1161,7 @@ async function requestMomentFix(key) {
     const data = await res.json();
 
     if (!res.ok) {
-      aiStatus.textContent = data.detail || "Ocurrió un error.";
+      aiStatus.textContent = data.detail || "Something went wrong.";
       aiStatus.className = "status error moment-ai-status";
       return;
     }
@@ -813,7 +1170,7 @@ async function requestMomentFix(key) {
     momentUIMode[key] = "view";
     renderScriptView();
   } catch (err) {
-    aiStatus.textContent = "No se pudo conectar con el servidor.";
+    aiStatus.textContent = "Couldn't connect to the server.";
     aiStatus.className = "status error moment-ai-status";
   }
 }
@@ -825,7 +1182,7 @@ form.addEventListener("submit", async (e) => {
   const file = fileInput.files[0];
 
   if (!text && !file) {
-    setStatus("Pega texto o sube un archivo primero.", "error");
+    setStatus("Paste some information or upload a file first.", "error");
     return;
   }
 
@@ -835,7 +1192,7 @@ form.addEventListener("submit", async (e) => {
   if (currentEmail) formData.append("email", currentEmail);
 
   submitBtn.disabled = true;
-  setStatus("Analizando...", "loading");
+  setStatus("Analyzing...", "loading");
   resultsEl.innerHTML = "";
 
   try {
@@ -846,56 +1203,57 @@ form.addEventListener("submit", async (e) => {
     const data = await res.json();
 
     if (!res.ok) {
-      setStatus(data.detail || "Ocurrió un error.", "error");
+      setStatus(data.detail || "Something went wrong.", "error");
       return;
     }
 
     setStatus(
-      `Listo — ${data.meta.characters_processed} caracteres procesados${
-        data.meta.file_name ? ` (incluye ${data.meta.file_name})` : ""
+      `Done — ${data.meta.characters_processed} characters processed${
+        data.meta.file_name ? ` (includes ${data.meta.file_name})` : ""
       }.`,
       ""
     );
 
     currentProfile = data.profile;
     currentLabels = data.category_labels;
+    activeBrandId = data.brand_id;
+    if (data.brand_id !== null && data.brand_id !== undefined) {
+      currentBrands.push({ id: data.brand_id, profile: data.profile });
+    }
     editingCategories = false;
+    categoriesCollapsed = false;
     intakeSection.style.display = "none";
     renderCategoryView();
   } catch (err) {
-    setStatus("No se pudo conectar con el servidor.", "error");
+    setStatus("Couldn't connect to the server.", "error");
   } finally {
     submitBtn.disabled = false;
   }
 });
 
-emailContinueBtn.addEventListener("click", async () => {
-  const email = emailInput.value.trim();
-  const password = passwordInput.value;
+function setLoginFormDisabled(disabled) {
+  loginContinueBtn.disabled = disabled;
+  loginEmailInput.disabled = disabled;
+  loginPasswordInput.disabled = disabled;
+}
+
+loginContinueBtn.addEventListener("click", async () => {
+  const email = loginEmailInput.value.trim();
+  const password = loginPasswordInput.value;
+
+  loginNoAccountEl.style.display = "none";
 
   if (!isValidEmail(email)) {
-    setEmailStatus("Escribe un correo válido.", "error");
+    setLoginStatus("Enter a valid email.", "error");
     return;
   }
   if (!password) {
-    setEmailStatus("Escribe una contraseña.", "error");
+    setLoginStatus("Enter a password.", "error");
     return;
   }
 
-  // Always start from a clean slate for this email — never carry over
-  // whatever was in memory from a previous email in this same session.
-  currentProfile = null;
-  currentLabels = null;
-  currentBrief = null;
-  editingCategories = false;
-  resultsEl.innerHTML = "";
-  intakeSection.style.display = "none";
-  setStatus("", "");
-
-  emailContinueBtn.disabled = true;
-  emailInput.disabled = true;
-  passwordInput.disabled = true;
-  setEmailStatus("Verificando...", "loading");
+  setLoginFormDisabled(true);
+  setLoginStatus("Checking...", "loading");
 
   try {
     const res = await fetch("/api/auth/login", {
@@ -906,54 +1264,136 @@ emailContinueBtn.addEventListener("click", async () => {
     const data = await res.json();
 
     if (!res.ok) {
-      setEmailStatus(data.detail || "Ocurrió un error.", "error");
-      emailContinueBtn.disabled = false;
-      emailInput.disabled = false;
-      passwordInput.disabled = false;
+      setLoginFormDisabled(false);
+      if (data.detail === "no_account") {
+        setLoginStatus("", "");
+        loginNoAccountEl.style.display = "block";
+      } else {
+        setLoginStatus(data.detail || "Something went wrong.", "error");
+      }
       return;
     }
 
-    currentEmail = email;
-
-    if (data.profile) {
-      currentProfile = data.profile;
-      currentLabels = data.category_labels;
-      editingCategories = false;
-      setEmailStatus(`Perfil encontrado para ${email}.`, "");
-      intakeSection.style.display = "none";
-      renderCategoryView();
-    } else {
-      setEmailStatus(`No hay perfil guardado para ${email} todavía — vamos a crear uno.`, "");
-      intakeHeading.textContent = `Nuevo perfil para ${email}`;
-      resultsEl.innerHTML = "";
-      intakeSection.style.display = "block";
-    }
-
-    changeEmailBtn.style.display = "inline-block";
+    setLoginStatus("", "");
+    setLoginFormDisabled(false);
+    enterApp(email, data);
   } catch (err) {
-    setEmailStatus("No se pudo conectar con el servidor.", "error");
-    emailContinueBtn.disabled = false;
-    emailInput.disabled = false;
-    passwordInput.disabled = false;
-    currentEmail = null;
+    setLoginStatus("Couldn't connect to the server.", "error");
+    setLoginFormDisabled(false);
   }
 });
 
-changeEmailBtn.addEventListener("click", () => {
+goToSignupBtn.addEventListener("click", () => {
+  signupEmailInput.value = loginEmailInput.value.trim();
+  signupPasswordInput.value = "";
+  signupConfirmPasswordInput.value = "";
+  signupFirstNameInput.value = "";
+  signupLastNameInput.value = "";
+  signupCompanyInput.value = "";
+  setSignupStatus("", "");
+  showSignupScreen();
+});
+
+backToLoginBtn.addEventListener("click", () => {
+  setSignupStatus("", "");
+  showLoginScreen();
+});
+
+signupSubmitBtn.addEventListener("click", async () => {
+  const email = signupEmailInput.value.trim();
+  const password = signupPasswordInput.value;
+  const confirmPassword = signupConfirmPasswordInput.value;
+  const firstName = signupFirstNameInput.value.trim();
+  const lastName = signupLastNameInput.value.trim();
+  const companyName = signupCompanyInput.value.trim();
+
+  if (!isValidEmail(email)) {
+    setSignupStatus("Enter a valid email.", "error");
+    return;
+  }
+  if (!password) {
+    setSignupStatus("Enter a password.", "error");
+    return;
+  }
+  if (password !== confirmPassword) {
+    setSignupStatus("Passwords don't match.", "error");
+    return;
+  }
+  if (!firstName || !lastName) {
+    setSignupStatus("Enter your first and last name.", "error");
+    return;
+  }
+  if (!companyName) {
+    setSignupStatus("Enter your company, brand, or username.", "error");
+    return;
+  }
+
+  signupSubmitBtn.disabled = true;
+  setSignupStatus("Creating account...", "loading");
+
+  try {
+    const res = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        password,
+        confirm_password: confirmPassword,
+        first_name: firstName,
+        last_name: lastName,
+        company_name: companyName,
+      }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      setSignupStatus(data.detail || "Something went wrong.", "error");
+      signupSubmitBtn.disabled = false;
+      return;
+    }
+
+    setSignupStatus("", "");
+    signupSubmitBtn.disabled = false;
+    enterApp(email, data);
+  } catch (err) {
+    setSignupStatus("Couldn't connect to the server.", "error");
+    signupSubmitBtn.disabled = false;
+  }
+});
+
+collapseBrandBtn.addEventListener("click", () => {
+  if (activeBrandId === null) return;
+  activeBrandId = null;
+  currentProfile = null;
+  editingCategories = false;
+  categoriesCollapsed = true;
+  currentBrief = null;
+  intakeSection.style.display = "none";
+  setStatus("", "");
+  renderCategoryView();
+});
+
+logoutBtn.addEventListener("click", () => {
   currentEmail = null;
+  currentFirstName = null;
+  currentCompanyName = null;
+  currentBrands = [];
+  activeBrandId = null;
   currentProfile = null;
   currentLabels = null;
+  currentBrief = null;
   editingCategories = false;
 
-  emailInput.value = "";
-  emailInput.disabled = false;
-  passwordInput.value = "";
-  passwordInput.disabled = false;
-  emailContinueBtn.disabled = false;
-  changeEmailBtn.style.display = "none";
-  setEmailStatus("", "");
+  loginEmailInput.value = "";
+  loginPasswordInput.value = "";
+  setLoginFormDisabled(false);
+  loginNoAccountEl.style.display = "none";
+  setLoginStatus("", "");
 
   intakeSection.style.display = "none";
   resultsEl.innerHTML = "";
   setStatus("", "");
+  updateCollapseBrandBtnVisibility();
+
+  showLoginScreen();
 });

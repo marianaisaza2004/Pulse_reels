@@ -118,6 +118,88 @@ def refine_idea(profile: dict, brief: dict) -> dict:
     }
 
 
+IMPROVE_SYSTEM_PROMPT = """You are the Viral Engine for Pulse. The company already has a \
+scored reel idea and wants to improve ONE specific criterion they're not happy with, even \
+if the overall idea already cleared the minimum bar.
+
+You'll receive: the brand profile, the current content brief (including the current topic/ \
+angle), the full current score breakdown for all 10 criteria, which ONE criterion the \
+company wants improved (with its current score and note), and an optional extra \
+instruction from the company on where to focus.
+
+Sharpen the SAME idea specifically to raise that one criterion — do not propose a \
+different topic or abandon the current angle. Use the criterion's note as your starting \
+point for what to fix, and factor in the company's extra instruction if they gave one. \
+Try not to weaken the other criteria while you do this.
+
+Return only the new topic/angle for this piece of content, one to two sentences, in the \
+same language as the brief."""
+
+IMPROVE_SCHEMA = {
+    "type": "object",
+    "properties": {"topic": {"type": "string"}},
+    "required": ["topic"],
+    "additionalProperties": False,
+}
+
+
+def improve_criterion(
+    profile: dict,
+    brief: dict,
+    scores: dict,
+    criterion: str,
+    instruction: str = "",
+) -> dict:
+    """Sharpens the current idea to improve one specific criterion, re-scores it, and
+    writes the script too if the new score clears the minimum to produce."""
+    client = Anthropic()
+
+    current_score = scores[criterion]["score"]
+    current_note = scores[criterion]["note"]
+
+    user_content = (
+        f"Brand profile (JSON):\n{json.dumps(profile, ensure_ascii=False)}\n\n"
+        f"Current content brief:\n{_brief_to_text(brief)}\n\n"
+        f"Full current score breakdown (JSON):\n{json.dumps(scores, ensure_ascii=False)}\n\n"
+        f"Criterion to improve: {criterion} (currently {current_score}/10)\n"
+        f"Note on this criterion: {current_note}\n\n"
+        f"Extra instruction from the company (optional): {instruction or 'none given'}"
+    )
+
+    response = client.messages.create(
+        model=MODEL,
+        max_tokens=1000,
+        output_config={"format": {"type": "json_schema", "schema": IMPROVE_SCHEMA}},
+        system=IMPROVE_SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": user_content}],
+    )
+
+    if response.stop_reason == "refusal":
+        raise ScriptGenerationRefused("The model couldn't improve this criterion.")
+
+    text_block = next(b for b in response.content if b.type == "text")
+    new_topic = json.loads(text_block.text)["topic"]
+
+    new_brief = dict(brief)
+    new_brief["topic"] = new_topic
+
+    new_scores = score_concept(profile, new_brief)
+    total = total_score(new_scores)
+    produced = total >= MIN_SCORE_TO_PRODUCE
+
+    result = {
+        "topic": new_topic,
+        "scores": new_scores,
+        "total": total,
+        "produced": produced,
+    }
+
+    if produced:
+        result["script"] = generate_script(profile, new_brief)
+
+    return result
+
+
 def score_concept(profile: dict, brief: dict) -> dict:
     client = Anthropic()
 
@@ -136,7 +218,7 @@ def score_concept(profile: dict, brief: dict) -> dict:
     )
 
     if response.stop_reason == "refusal":
-        raise ScriptGenerationRefused("El modelo no pudo evaluar esta idea.")
+        raise ScriptGenerationRefused("The model couldn't evaluate this idea.")
 
     text_block = next(b for b in response.content if b.type == "text")
     scores = json.loads(text_block.text)
@@ -254,7 +336,7 @@ def generate_script(profile: dict, brief: dict) -> dict:
     )
 
     if response.stop_reason == "refusal":
-        raise ScriptGenerationRefused("El modelo no pudo generar el guión para este contenido.")
+        raise ScriptGenerationRefused("The model couldn't generate a script for this content.")
 
     text_block = next(b for b in response.content if b.type == "text")
     return json.loads(text_block.text)
@@ -285,7 +367,7 @@ def revise_moment(
     )
 
     if response.stop_reason == "refusal":
-        raise ScriptGenerationRefused("El modelo no pudo ajustar esta parte del guión.")
+        raise ScriptGenerationRefused("The model couldn't adjust this part of the script.")
 
     text_block = next(b for b in response.content if b.type == "text")
     return json.loads(text_block.text)

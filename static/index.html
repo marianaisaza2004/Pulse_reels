@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,49 +8,128 @@
 </head>
 <body>
   <div class="wrap">
-    <header>
-      <h1>Pulse — Brand Intake</h1>
-      <p>Sube o pega la información de la empresa. Sin importar el formato, se resume en las 9 categorías estándar — y queda guardada bajo tu correo para la próxima vez.</p>
-    </header>
 
-    <section class="panel" id="email-panel">
-      <div class="field">
-        <div class="field-label">Correo de la empresa</div>
-        <input type="text" id="email-input" placeholder="empresa@ejemplo.com" />
-      </div>
-      <div class="field">
-        <div class="field-label">Contraseña</div>
-        <input type="password" id="password-input" placeholder="Contraseña" />
-      </div>
-      <div class="actions-row">
-        <button type="button" id="email-continue-btn">Continuar</button>
-        <button type="button" id="change-email-btn" class="secondary" style="display: none;">Cambiar correo</button>
-      </div>
-      <div id="email-status" class="status"></div>
-    </section>
+    <!-- Screen 1: log in -->
+    <section id="login-screen">
+      <header>
+        <h1>Pulse — Brand Intake</h1>
+        <p>Log in to continue with your brand profile.</p>
+      </header>
 
-    <section class="panel" id="intake-section" style="display: none;">
-      <p id="intake-heading" class="status"></p>
-      <p class="intake-description">
-        Aquí se debe incluir la información clave de la empresa para que la AI entienda la
-        marca y cree contenido alineado. Agrega datos como descripción del negocio,
-        productos o servicios, público objetivo, tono de comunicación, propuesta de valor,
-        objetivos de marketing, canales, identidad visual, pilares de contenido y cualquier
-        detalle relevante para generar contenido coherente con la marca.
-      </p>
-      <form id="intake-form">
-        <textarea id="text-input" placeholder="Pega aquí la información de la empresa (descripción, posts, brand guidelines, lo que tengas)..."></textarea>
-        <div>
-          <input type="file" id="file-input" accept=".txt,.md,.csv,.pdf,.docx" />
+      <section class="panel" id="login-panel">
+        <div class="field">
+          <div class="field-label">Email</div>
+          <input type="text" id="login-email-input" placeholder="you@email.com" />
         </div>
-        <button type="submit" id="submit-btn">Analizar</button>
-        <div id="status" class="status"></div>
-      </form>
+        <div class="field">
+          <div class="field-label">Password</div>
+          <div class="password-row">
+            <input type="password" id="login-password-input" placeholder="Password" />
+            <button type="button" class="password-toggle-btn" id="login-password-toggle">Show</button>
+          </div>
+        </div>
+        <div class="actions-row">
+          <button type="button" id="login-continue-btn">Continue</button>
+        </div>
+        <div id="login-status" class="status"></div>
+        <div id="login-no-account" style="display: none;">
+          <p class="status">This is the first time you're using this email — you can't log in yet.</p>
+          <button type="button" id="go-to-signup-btn">Create account</button>
+        </div>
+      </section>
     </section>
 
-    <section id="results"></section>
+    <!-- Screen 2: create account -->
+    <section id="signup-screen" style="display: none;">
+      <header>
+        <h1>Create account</h1>
+        <p>Sign up to save your brand profile and generate content.</p>
+      </header>
+
+      <section class="panel" id="signup-panel">
+        <div class="field">
+          <div class="field-label">Email</div>
+          <input type="text" id="signup-email-input" placeholder="you@email.com" />
+        </div>
+        <div class="field">
+          <div class="field-label">Password</div>
+          <div class="password-row">
+            <input type="password" id="signup-password-input" placeholder="Password" />
+            <button type="button" class="password-toggle-btn" id="signup-password-toggle">Show</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label">Confirm password</div>
+          <div class="password-row">
+            <input type="password" id="signup-confirm-password-input" placeholder="Confirm password" />
+            <button type="button" class="password-toggle-btn" id="signup-confirm-password-toggle">Show</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label">First name</div>
+          <input type="text" id="signup-first-name-input" placeholder="First name" />
+        </div>
+        <div class="field">
+          <div class="field-label">Last name</div>
+          <input type="text" id="signup-last-name-input" placeholder="Last name" />
+        </div>
+        <div class="field">
+          <div class="field-label">Company, brand, or username (if you create content on your own)</div>
+          <input type="text" id="signup-company-input" placeholder="Your company, brand, or username" />
+        </div>
+        <div class="actions-row">
+          <button type="button" id="signup-submit-btn">Create account</button>
+          <button type="button" id="back-to-login-btn" class="secondary">← Back to log in</button>
+        </div>
+        <div id="signup-status" class="status"></div>
+      </section>
+    </section>
+
+    <!-- Screen 3: welcome + intake -->
+    <section id="app-screen" style="display: none;">
+      <header>
+        <h1 id="welcome-heading">Welcome</h1>
+        <div class="actions-row">
+          <button type="button" id="collapse-brand-btn" class="secondary">Collapse brand</button>
+          <button type="button" id="logout-btn" class="secondary">Log out</button>
+        </div>
+      </header>
+
+      <section class="panel" id="intake-section" style="display: none;">
+        <p id="intake-heading" class="status"></p>
+        <p class="intake-description">
+          For the best results, try to cover:
+        </p>
+        <ul class="intake-guide-list">
+          <li>What your business does, and what makes it different</li>
+          <li>Your brand's personality and tone of voice</li>
+          <li>Who your audience is and what they need</li>
+          <li>What you want this content to achieve</li>
+          <li>How you currently show up on social media — platforms, formats, what's worked before</li>
+          <li>Any brand assets you have (website, colors, slogan)</li>
+          <li>Your competitors and how you stand out</li>
+          <li>Any rules your content must follow (legal restrictions, required CTA, things to avoid)</li>
+          <li>Your story — why you started this, and what's behind the brand</li>
+        </ul>
+        <p class="intake-description">
+          Missing something? No problem — you can always add more after we analyze this.
+        </p>
+        <form id="intake-form">
+          <textarea id="text-input" rows="10" placeholder="Paste or type everything you've got about your business — descriptions, posts, notes, whatever you have on hand..."></textarea>
+          <div>
+            <div class="field-label">Or upload a file with all this information (optional)</div>
+            <input type="file" id="file-input" accept=".txt,.md,.csv,.pdf,.docx" />
+          </div>
+          <button type="submit" id="submit-btn">Analyze</button>
+          <div id="status" class="status"></div>
+        </form>
+      </section>
+
+      <section id="results"></section>
+    </section>
+
   </div>
 
-  <script src="/static/app.js"></script>
+  <script src="/static/app.js?v=2"></script>
 </body>
 </html>
